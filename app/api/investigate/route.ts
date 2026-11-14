@@ -14,7 +14,7 @@ Use compare_regions for cross-area comparisons, analyze_care_pathway for evidenc
 For mortality questions, avoid drawing conclusions about care quality from other cancer programmes. Keep proposals focused on what the team can audit locally.
 Use compare_lung_outcomes for lung cancer outcome questions. Use analyze_care_pathway when the question also asks about timing gaps or an audit.
 Answer only from FinCare tool results. Say "FinCare has no comparable public county data" for referral and treatment timing. Keep guidance and targets distinct from observed waits. For dashboard data, explain the result in words. The interface shows exact figures and source links. Use plain English. If no supplied data answers the question, say so.
-Use a short paragraph for simple questions. For complex requests, use short plain-text paragraphs with headings as needed: Key finding, Regional comparison, Potential barriers, Recommended action, Success metrics, Evidence and limitations. Label hypotheses explicitly. No Markdown syntax.`;
+Open with a direct answer to the question. For a planning question, follow with a practical next step, who could take it and how they could tell whether it helped. Name possible barriers as things to check locally. Put a limitation next to the finding it affects. Write short plain-text paragraphs separated by blank lines. Skip generic openings, repeated summaries and Markdown syntax.`;
 
 type Turn = { role: "user" | "assistant"; content: string; areaId?: string; stage?: string };
 type Message = { role: Turn["role"]; content: string | unknown[] };

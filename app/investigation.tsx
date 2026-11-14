@@ -232,21 +232,34 @@ function Answer({ text, animate, conversation }: {
 
   useEffect(() => {
     if (!animate || finished.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const duration = Math.min(1500, Math.max(260, text.length * 3));
+    const chunks = text.match(/\S+|\s+/g) ?? [];
+    const pace = Math.min(1, 6500 / (text.length * 15));
+    let elapsed = 0;
+    const revealTimes = chunks.map((chunk, index) => {
+      elapsed += Math.max(24, Math.min(110, chunk.length * 15)) * pace;
+      const revealAt = elapsed;
+      if (/\n\s*\n/.test(chunk)) elapsed += 150;
+      else if (/[.!?]$/.test(chunk) && !chunks[index + 1]?.includes("\n")) elapsed += 65;
+      return revealAt;
+    });
+    let visibleChunks = 0;
+    let end = 0;
     let frame: number;
 
     function tick(now: number) {
       started.current ??= now;
-      const body = conversation.current;
-      follow.current = Boolean(body && body.scrollHeight - body.scrollTop - body.clientHeight < 40);
-      const progress = Math.min(1, (now - started.current) / duration);
-      let end = Math.floor(progress * text.length);
-      // Keep UTF-16 surrogate pairs intact while slicing the response.
-      const next = text.charCodeAt(end);
-      if (next >= 0xdc00 && next <= 0xdfff) end += 1;
-      setLength(end);
-      finished.current = progress === 1;
-      if (progress < 1) frame = requestAnimationFrame(tick);
+      const previousEnd = end;
+      while (visibleChunks < chunks.length && revealTimes[visibleChunks] <= now - started.current) {
+        end += chunks[visibleChunks].length;
+        visibleChunks += 1;
+      }
+      if (end !== previousEnd) {
+        const body = conversation.current;
+        follow.current = Boolean(body && body.scrollHeight - body.scrollTop - body.clientHeight < 40);
+        setLength(end);
+      }
+      finished.current = visibleChunks === chunks.length;
+      if (!finished.current) frame = requestAnimationFrame(tick);
     }
 
     frame = requestAnimationFrame(tick);
@@ -254,13 +267,18 @@ function Answer({ text, animate, conversation }: {
   }, [animate, conversation, text]);
 
   const typing = animate && length < text.length;
+  const paragraphs = (typing ? text.slice(0, length) : text).split(/\n[ \t]*\n/);
   return (
     <div className="ai-answer-bubble">
       <h3 className="ai-answer-label"><span aria-hidden="true">✦</span> FinCare AI</h3>
       <p className="sr-only">{text}</p>
-      <p aria-hidden="true" className="whitespace-pre-wrap break-words">
-        {typing ? text.slice(0, length) : text}{typing && <span className="ai-caret" />}
-      </p>
+      <div aria-hidden="true" className="space-y-3">
+        {paragraphs.map((paragraph, index) => (
+          <p key={index} className="whitespace-pre-wrap break-words">
+            {paragraph}{typing && index === paragraphs.length - 1 && <span className="ai-caret" />}
+          </p>
+        ))}
+      </div>
     </div>
   );
 }
