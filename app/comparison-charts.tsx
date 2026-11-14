@@ -23,14 +23,14 @@ export function AttendanceChart({ area }: { area: Area }) {
   return <figure className="my-4 rounded-xl border border-blue-100 bg-blue-50/40 p-3">
     <h3 className="text-sm">{area.name} screening attendance</h3>
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <div key={area.id} className="comparison-donut relative size-28">
-        <PieChart width={112} height={112} accessibilityLayer={false}>
-          <Pie data={slices} dataKey="value" innerRadius={36} outerRadius={51} startAngle={90} endAngle={-270} isAnimationActive={false}>
+      <div key={area.id} className="comparison-donut relative size-36">
+        <PieChart width={144} height={144} accessibilityLayer={false}>
+          <Pie data={slices} dataKey="value" innerRadius={47} outerRadius={66} startAngle={90} endAngle={-270} isAnimationActive={false}>
             {slices.map(({ name, color }) => <Cell key={name} fill={color} />)}
           </Pie>
           <Tooltip formatter={(value) => counts.format(Number(value))} />
         </PieChart>
-        <span className="pointer-events-none absolute inset-0 grid place-items-center font-semibold text-blue-950">{area.rate.toFixed(1)}%</span>
+        <span className="pointer-events-none absolute inset-0 grid place-items-center text-lg font-semibold tabular-nums text-blue-950">{area.rate.toFixed(1)}%</span>
       </div>
       <ul className="space-y-1 text-xs">
         {slices.map(({ name, value, color }) => <li key={name} className="flex items-center gap-2">
@@ -63,7 +63,7 @@ export function RegionalBars({ rows, stage, areaId, id }: { rows: readonly Area[
               <p>{row.gap > 0 ? "+" : ""}{row.gap.toFixed(1)} percentage points vs Finland</p>
             </div>;
           }} />
-          <Bar dataKey="rate" name={indicator.title} barSize={16} radius={[0, 5, 5, 0]} isAnimationActive={false}>
+          <Bar dataKey="rate" name={indicator.title} barSize={18} radius={[0, 6, 6, 0]} isAnimationActive={false}>
             {rows.map((row) => <Cell key={row.id} fill={row.id === areaId ? "#1555c0" : "#8baee6"} />)}
           </Bar>
         </BarChart>

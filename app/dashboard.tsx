@@ -252,16 +252,16 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
           </section>
 
           <div className="grid gap-6">
-            <section className="panel action-panel" aria-labelledby="brief">
-              <p className="eyebrow">FinCare AI</p>
-              <h2 id="brief">Investigate {area.name}</h2>
+            <section className="panel regional-brief" aria-labelledby="brief">
+              <p className="eyebrow">FinCare AI · Quick brief</p>
+              <h2 id="brief">What could {area.name} do next?</h2>
               <p className="my-3 text-sm text-slate-600">Ask what might be getting in people’s way and what a local team could try.</p>
               <button className="bg-blue-800 text-white hover:bg-blue-900" type="button" disabled={pending} onClick={generateBrief}>{pending ? "Preparing suggestion…" : "Explain this indicator and propose actions"}</button>
               <div aria-live="polite" aria-busy={pending}>
                 {pending && <div className="ai-loading mt-3" role="status"><span className="ai-pulse" aria-hidden="true" /> Checking the local figures and what the team could try</div>}
                 {error && <p className="mt-3 text-sm text-red-800">{error}</p>}
                 {brief && (
-                  <div className="mt-5 space-y-4 text-sm">
+                  <div className="regional-brief-result mt-5 space-y-4 text-sm">
                     <p>{brief.interpretation}</p>
                     <div><h3>What might explain the gap</h3><p>{brief.hypothesis}</p></div>
                     <div><h3>Why try this change</h3><p>{brief.rationale}</p></div>
@@ -276,7 +276,7 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
                 stage === "screening"
                   ? "Show a chart comparing breast screening attendance in the selected area with Finland. What should the local team check first?"
                   : "Explain how colorectal screening follow-up in the selected area compares with Finland. What should the local team check first?",
-              )}>Investigate with FinCare AI ↗</button>
+              )}>Ask a follow-up in chat ↗</button>
             </section>
             <ActionCard plan={brief && pilot ? {
               ...localPlan(stage, areaId),

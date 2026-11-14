@@ -84,6 +84,11 @@ test("agent uses prior context, executes sequential tool calls and preserves ver
   });
   assert.equal((await POST(request([]))).status, 400);
   assert.equal((await POST(request())).status, 503);
+  const help = await (await POST(request([
+    { role: "user", content: "what is this i don't understand what is fincare" },
+  ]))).json();
+  assert.match(help.answer, /FinCare helps you/);
+  assert.deepEqual(help.steps, []);
 
   process.env.ANTHROPIC_API_KEY = "test-key";
   const toolUse = (id, name, input) => ({

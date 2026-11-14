@@ -5,6 +5,7 @@ import type { Step } from "../lib/investigation";
 import { comparisons, timingGaps, type Stage } from "../lib/pathway";
 import { areas } from "../lib/screening";
 import { ScreeningChart } from "./comparison-charts";
+import VoiceControls from "./voice-controls";
 
 const toolLabels: Record<string, string> = {
   check_waiting_time_evidence: "Checked waiting time guidance",
@@ -227,7 +228,10 @@ export default function Investigation({ areaId, setAreaId, stage, open, setOpen,
             </svg>
           </button>
         </div>
-        <p className="mt-2 text-xs text-slate-600">For service planning. Leave out patient details.</p>
+        {open && <VoiceControls open={open} pending={pending} answer={latest?.answer} onTranscript={(transcript) =>
+          setQuestion((draft) => [draft.trim(), transcript].filter(Boolean).join(" ").slice(0, 800))
+        } />}
+        <p className="text-xs text-slate-600">For service planning. Leave out patient details.</p>
       </form>
     </section>
     </>
