@@ -40,7 +40,6 @@ export default function Dashboard() {
       <header className="app-header">
         <div className="shell flex flex-wrap items-center justify-between gap-3 py-4">
           <a href="#overview" className="inline-flex items-center gap-2 text-xl font-bold tracking-tight text-blue-950 no-underline">
-            <span className="fincare-logo" aria-hidden="true">F</span>
             FinCare
           </a>
           <nav aria-label="Workspace" className="header-links">

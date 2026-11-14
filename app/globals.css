@@ -32,12 +32,6 @@ body {
     animation: comparison-bar-in 620ms cubic-bezier(.18,.75,.28,1) both;
   }
 }
-.fincare-logo {
-  @apply inline-grid size-8 shrink-0 place-items-center rounded-lg bg-blue-700 text-sm font-bold text-white;
-}
-.fincare-welcome .fincare-logo {
-  @apply mb-4 size-12 bg-white/15 text-2xl ring-1 ring-white/30;
-}
 @keyframes fincare-welcome-out {
   0%, 72% { opacity: 1; visibility: visible; }
   100% { opacity: 0; visibility: hidden; }
