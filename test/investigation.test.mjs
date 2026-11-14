@@ -122,6 +122,21 @@ test("agent uses prior context, executes sequential tool calls and preserves ver
   const clarification = await (await POST(request())).json();
   assert.equal(clarification.answer, "Which area would you like to compare?");
   assert.deepEqual(clarification.steps, []);
+  replies = [finish("You’re welcome. Happy to help.")];
+  const thanks = await (await POST(request([{ role: "user", content: "Thanks!" }]))).json();
+  assert.equal(thanks.answer, "You’re welcome. Happy to help.");
+  assert.deepEqual(thanks.steps, []);
+
+  replies = [toolUse("compare", "compare_regions", { stage: "screening", areaIds: ["helsinki", "lapland"] }), finish("[[REGIONAL_RESULT]]")];
+  const comparison = await (await POST(request())).json();
+  assert.match(comparison.answer, /Finland 81\.6%/);
+  assert.match(comparison.answer, /Helsinki: 74\.3%/);
+  assert.match(comparison.answer, /Lapland:/);
+
+  replies = [toolUse("math", "calculate", { operation: "percentage", a: 3, b: 4 }), finish("[[CALCULATION]]")];
+  const calculation = await (await POST(request())).json();
+  assert.match(calculation.answer, /75%/);
+  assert.throws(() => runInvestigationTool("calculate", { operation: "ratio", a: 3, b: 0 }));
 
   replies = [regionCall, finish("Attendance improved by 8%."), finish("Helsinki’s screening attendance is below Finland’s rate.")];
   const repaired = await (await POST(request())).json();
@@ -156,6 +171,30 @@ test("agent uses prior context, executes sequential tool calls and preserves ver
   assert.equal(current.answer, undefined);
   assert.equal(current.steps.length, 0);
   assert.ok(payload(mock.mock.calls.length - 1).tools.every(({ type }) => !type?.startsWith("web_")));
+
+  const searchSetting = process.env.ANTHROPIC_WEB_SEARCH;
+  process.env.ANTHROPIC_WEB_SEARCH = "true";
+  try {
+    replies = [{
+      stop_reason: "end_turn",
+      content: [
+        { type: "web_search_tool_result", content: [
+          { type: "web_search_result", url: "https://thl.fi/en/", title: "THL" },
+          { type: "web_search_result", url: "https://thl.fi.example.com/", title: "Outside the allowed domains" },
+        ] },
+        { type: "text", text: "THL published an update in 2026.", citations: [
+          { url: "https://thl.fi/en/", cited_text: "Published in 2026" },
+        ] },
+      ],
+    }];
+    const research = await (await POST(request())).json();
+    assert.equal(research.answer, "THL published an update in 2026.");
+    assert.deepEqual(research.steps[0].results[0].sources, [{ url: "https://thl.fi/en/", name: "THL" }]);
+    assert.equal(payload(mock.mock.calls.length - 1).tools.find(({ name }) => name === "web_search").max_uses, 2);
+  } finally {
+    if (searchSetting === undefined) delete process.env.ANTHROPIC_WEB_SEARCH;
+    else process.env.ANTHROPIC_WEB_SEARCH = searchSetting;
+  }
 
   const timing = await (await POST(request([
     { role: "user", content: "How long do patients wait for referral and treatment in Helsinki?" },

@@ -12,6 +12,7 @@ export type Step = {
   details: string[];
   sources: EvidenceLink[];
   localComparison?: { areaId: string; stage: MeasuredStage };
+  regionalComparison?: { areaIds: string[]; stage: MeasuredStage };
   chart?: ScreeningChartSpec;
 };
 const areaIds = areas.map(({ id }) => id);
@@ -26,6 +27,10 @@ function tool(name: string, description: string, properties: object, required: s
 }
 
 export const investigationTools = [
+  tool("calculate", "Calculate a difference, ratio, or percentage from user-provided numbers or verified tool results. Use a as the numerator or first operand and b as the denominator or second operand.", {
+    operation: { type: "string", enum: ["difference", "ratio", "percentage"] },
+    a: { type: "number" }, b: { type: "number" },
+  }, ["operation", "a", "b"]),
   tool("check_waiting_time_evidence", "Check available evidence and THL recording guidance for referral or treatment waits. This tool does not return measured county waiting times.", {
     stage: { type: "string", enum: ["referral", "treatment"] },
   }, ["stage"]),
@@ -84,6 +89,7 @@ function compare(stage: MeasuredStage, ids?: string[]): Step {
   return {
     title: comparison.title,
     localComparison: ids?.length === 1 ? { areaId: ids[0], stage } : undefined,
+    regionalComparison: { areaIds: rows.map(({ id }) => id), stage },
     details: [
       `${comparison.year} · ${comparison.coverage}`,
       comparison.definition,
@@ -106,6 +112,16 @@ export function runInvestigationTool(name: string, input: unknown): Step[] {
     throw new Error("Unsupported tool or argument.");
   }
   const { areaId, areaIds: ids, stage, pilot } = args;
+  if (name === "calculate") {
+    const { a, b, operation } = args;
+    if (typeof a !== "number" || typeof b !== "number" || !Number.isFinite(a) || !Number.isFinite(b)
+      || (operation !== "difference" && operation !== "ratio" && operation !== "percentage")
+      || (operation !== "difference" && b === 0)) throw new Error("Use finite numbers and a non-zero divisor.");
+    const result = operation === "difference" ? a - b : operation === "ratio" ? a / b : (a / b) * 100;
+    if (!Number.isFinite(result)) throw new Error("The result is outside the supported range.");
+    const value = new Intl.NumberFormat("en-GB", { maximumSignificantDigits: 12 }).format(result);
+    return [{ title: "Calculation", details: [`${operation} of ${a} and ${b}: ${value}${operation === "percentage" ? "%" : ""}`], sources: [] }];
+  }
   if (name === "check_waiting_time_evidence") {
     if (stage !== "referral" && stage !== "treatment") throw new Error("Choose referral or treatment.");
     return [waitingTimeEvidence(stage)];

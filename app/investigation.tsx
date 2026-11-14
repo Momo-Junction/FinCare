@@ -8,6 +8,8 @@ import { ScreeningChart } from "./comparison-charts";
 import VoiceControls from "./voice-controls";
 
 const toolLabels: Record<string, string> = {
+  calculate: "Checked the calculation",
+  web_search: "Searched public sources",
   check_waiting_time_evidence: "Checked waiting time guidance",
   show_screening_chart: "Prepared a screening chart",
   compare_lung_outcomes: "Compared lung cancer outcomes",
@@ -90,7 +92,11 @@ export default function Investigation({ areaId, setAreaId, stage, open, setOpen,
       { role: "user", content: item.question, areaId: item.areaId, stage: item.stage },
       {
         role: "assistant", content: item.answer,
-        focus: item.steps.flatMap(({ results }) => results.flatMap(({ localComparison }) => localComparison ? [localComparison] : [])).slice(0, 8),
+        focus: [...new Map(item.steps.flatMap(({ results }) => results.flatMap(({ localComparison, regionalComparison }) => {
+          const areas = localComparison ? [localComparison] : regionalComparison && regionalComparison.areaIds.length <= 6
+            ? regionalComparison.areaIds.map((areaId) => ({ areaId, stage: regionalComparison.stage })) : [];
+          return areas.map((area) => [`${area.areaId}:${area.stage}`, area] as const);
+        }))).values()].slice(0, 8),
       },
     ]);
     try {
