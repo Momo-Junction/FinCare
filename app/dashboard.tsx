@@ -155,7 +155,7 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
           <section className="panel" aria-labelledby="comparison">
             <div className="comparison-header">
             <div>
-            <p className="eyebrow">{indicator.year} · {indicator.status}</p>
+            <p className="eyebrow">{indicator.status}</p>
             <h2 id="comparison">{indicator.title}</h2>
             </div>
             <div>
@@ -203,12 +203,13 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
               <div className="overflow-x-auto">
                 <table className="mt-2 w-full text-left text-sm">
                   <caption className="sr-only">{indicator.title}, {indicator.year}</caption>
-                  <thead><tr><th scope="col">Area</th><th scope="col">{indicator.numerator}</th><th scope="col">{indicator.denominator}</th><th scope="col">Rate</th></tr></thead>
+                  <thead><tr><th scope="col">Area</th><th scope="col">{indicator.numerator}</th><th scope="col">{indicator.denominator}</th><th scope="col">Area rate</th>{stage === "diagnosis" && <th scope="col">National rate</th>}</tr></thead>
                   <tbody>
-                    <tr className="font-semibold"><th scope="row">National benchmark</th><td>{counts.format(national.attended)}</td><td>{counts.format(national.invited)}</td><td>{national.rate.toFixed(1)}%</td></tr>
+                    <tr className="font-semibold"><th scope="row">National benchmark</th><td>{counts.format(national.attended)}</td><td>{counts.format(national.invited)}</td><td>{national.rate.toFixed(1)}%</td>{stage === "diagnosis" && <td>{national.rate.toFixed(1)}%</td>}</tr>
                     {regional.map((item) => (
                       <tr key={item.id} className={item.id === areaId ? "bg-blue-50" : ""}>
                         <th scope="row">{item.name}</th><td>{counts.format(item.attended)}</td><td>{counts.format(item.invited)}</td><td>{item.rate.toFixed(1)}%</td>
+                        {stage === "diagnosis" && <td>{national.rate.toFixed(1)}%</td>}
                       </tr>
                     ))}
                   </tbody>
@@ -236,7 +237,6 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
                   <div className="mt-5 space-y-4 text-sm">
                     <p>{brief.interpretation}</p>
                     <div><h3>Hypothesis to test</h3><p>{brief.hypothesis}</p></div>
-                    <div><h3>Check locally</h3><p>{brief.verification}</p></div>
                     <div><h3>Why this pilot</h3><p>{brief.rationale}</p></div>
                     <div><h3>Evidence limit</h3><p>{brief.limitation}</p></div>
                     <ul className="space-y-1">
@@ -249,42 +249,11 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
             </section>
             <ActionCard plan={brief && pilot ? {
               ...localPlan(stage, areaId),
-              first30: `${localPlan(stage, areaId).first30} ${brief.verification}`,
+              first30: brief.verification,
               first90: `If those checks support the change, ${pilot.action.charAt(0).toLowerCase() + pilot.action.slice(1)}`,
               measure: `${localPlan(stage, areaId).measure} ${pilot.metric}`,
             } : localPlan(stage, areaId)} />
-            {stage === "screening" && <section className="panel space-y-2">
-              <h3>What to check first</h3>
-              <p className="text-sm">Ordered by what the team can check first. The causes are still open.</p>
-              <ol className="list-decimal space-y-2 pl-5 text-sm">
-                <li><strong>Invitation delivery.</strong> The Registry notes that some invitations go unsent. Check whether this explains any of the local gap.</li>
-                <li><strong>Access and booking.</strong> Test whether appointment times, travel or rescheduling get in people’s way.</li>
-                <li><strong>Screening elsewhere.</strong> Check whether screening outside the programme explains part of the difference.</li>
-                <li><strong>Language and instructions.</strong> Ask invitees whether they understood the letter and how to book.</li>
-              </ol>
-              <a href={sources.registry.url}>Finnish Cancer Registry</a>
-            </section>}
-            {pilot && <section className="panel">
-              <h2>Option to test if the local checks support it</h2>
-              <h3 className="mt-3">{pilot.title}</h3>
-              <p className="mt-1">{area.gap >= 0 ? "Consider a targeted pilot if local checks identify a specific attendance barrier. " : ""}{pilot.action}</p>
-              <h3 className="mt-3">Measure success</h3>
-              <p className="mt-1">{pilot.metric}</p>
-              <p className="mt-3"><a href={sources.strategy.url}>{sources.strategy.name}</a></p>
-            </section>}
             <PilotPlanner areaId={areaId} stage={stage} />
-            <section className="panel">
-              <h2>What Finland needs to measure</h2>
-              <dl className="mt-3 space-y-3 text-sm">
-                {stage === "screening" ? (
-                  <div><dt className="font-semibold">Invitation delivery and booking</dt><dd>Record delivery, rescheduling and reasons for missed appointments to investigate participation gaps.</dd></div>
-                ) : (
-                  <div><dt className="font-semibold">Diagnostic follow-up and outcomes</dt><dd>Record positive result, referral, completed examination, alternative tests and confirmed diagnosis dates. Include cases still open.</dd></div>
-                )}
-              </dl>
-              <p className="mt-3 text-sm">Publish comparable counts and missingness by area.</p>
-              <p className="mt-3 text-sm"><a href={sources.roadmap.url}>{sources.roadmap.name}</a></p>
-            </section>
           </div>
         </div>
   );

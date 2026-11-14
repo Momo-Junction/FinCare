@@ -20,14 +20,9 @@ export function DecisionBrief() {
   const helsinki = rankedGaps("screening").find(({ id }) => id === "helsinki")!;
   return <section className="panel space-y-3">
     <p className="eyebrow">Two-minute decision brief · 2024</p>
-    <h2>Start by checking Helsinki’s screening invitations</h2>
+    <h2>Helsinki’s breast screening gap</h2>
     <p>{helsinki.rate}% attended breast screening in Helsinki, compared with {comparisons.screening.national.rate}% nationally. At the national rate, about <strong>{helsinki.fewerAtNationalRate.toLocaleString("en-GB")} more people</strong> would have attended from the same group.</p>
-    <ol className="list-decimal space-y-1 pl-5 text-sm">
-      <li>Check which invitations were sent, returned or never sent.</li>
-      <li>Ask people what got in their way and check screening outside the programme where records allow.</li>
-      <li>Test the change that addresses what the team finds.</li>
-    </ol>
-    <p className="text-sm"><strong>How to tell if it helped.</strong> Compare attendance with a group receiving usual care over the same period.</p>
+    <p className="text-sm">Use the recommendations below to check what kept people from attending and test a change against usual care.</p>
     <a className="text-sm" href={plan.source.url}>{plan.source.name}</a>
   </section>;
 }
@@ -85,8 +80,8 @@ export function PriorityView() {
         <summary className="cursor-pointer font-semibold">{comparisons[stage].title}</summary>
         <div className="overflow-x-auto">
           <table className="mt-3 w-full text-left text-sm">
-            <thead><tr><th scope="col">Area</th><th scope="col">Gap (percentage points)</th><th scope="col">More at national rate</th></tr></thead>
-            <tbody>{rankedGaps(stage).map((area) => <tr key={area.id}><th scope="row">{area.name}</th><td>{Math.abs(area.gap).toFixed(1)}</td><td>{area.fewerAtNationalRate.toLocaleString("en-GB")}</td></tr>)}</tbody>
+            <thead><tr><th scope="col">Area</th><th scope="col">Area rate</th><th scope="col">National rate</th><th scope="col">Gap (pp)</th><th scope="col">More at national rate</th></tr></thead>
+            <tbody>{rankedGaps(stage).map((area) => <tr key={area.id}><th scope="row">{area.name}</th><td>{area.rate.toFixed(1)}%</td><td>{comparisons[stage].national.rate.toFixed(1)}%</td><td>{Math.abs(area.gap).toFixed(1)}</td><td>{area.fewerAtNationalRate.toLocaleString("en-GB")}</td></tr>)}</tbody>
           </table>
         </div>
         <p className="mt-2 text-xs">2024 · {comparisons[stage].limitation}</p>

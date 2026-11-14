@@ -18,7 +18,7 @@ export const indicator = {
   definition: "Recorded attendees divided by people recorded as invited for programme mammography.",
   coverage: "Finland’s 21 wellbeing services counties and the City of Helsinki. Åland is excluded.",
   denominatorNote: "The Registry counts people selected for invitation. Some invitations may go unsent.",
-  status: "Final public data",
+  status: "2024 data (latest published final figures)",
 } as const;
 
 export const national = { invited: 344851, attended: 281369, rate: 81.6 };

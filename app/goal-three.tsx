@@ -9,7 +9,7 @@ import { laplandOptions } from "../lib/action-plans";
 
 export function GoalThree({ investigate }: { investigate: (question: string) => void }) {
   const [sex, setSex] = useState<"women" | "men">("men");
-  const [metric, setMetric] = useState<OutcomeMetric>("mortality");
+  const [metric, setMetric] = useState<OutcomeMetric>("survival");
   const [expanded, setExpanded] = useState(false);
   const data = lungOutcomes(sex, metric);
   const displayed = expanded ? data.rows : data.rows.slice(0, 5);
