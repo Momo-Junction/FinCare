@@ -52,7 +52,7 @@ export const nationalPlan: ActionPlan = {
   source: sources.roadmap,
 };
 
-export const laplandOptions = [
+export const lungAuditOptions = [
   { title: "Review referral handoffs", rule: "If referrals frequently wait before first review or come back incomplete, test a shared checklist and a named reviewer.", measure: "Track the wait to first review and the share returned." },
   { title: "Reserve faster diagnostic appointments", rule: "If the longest wait is between specialist review and imaging or biopsy, test reserved appointments for patients who meet clinical criteria.", measure: "Track days to confirmed diagnosis and waits for patients outside the trial." },
   { title: "Review upcoming treatment starts", rule: "If delays cluster after the treatment decision, test a weekly review of patients awaiting a first appointment.", measure: "Track days from treatment decision to start and the share still waiting." },

@@ -5,13 +5,22 @@ import { pilotScenario } from "../lib/goal-three";
 import { comparisons, timingGaps, type MeasuredStage } from "../lib/pathway";
 import { lungOutcomes, outcomeCoverage, outcomeMetrics, outcomePeriod, type OutcomeMetric } from "../lib/lung-outcomes";
 import { sources } from "../lib/screening";
-import { laplandOptions } from "../lib/action-plans";
+import { lungAuditOptions } from "../lib/action-plans";
+
+const outcomeNotes = {
+  survival: "The source table gives survival estimates without confidence intervals. Small differences in rank can be uncertain.",
+  mortality: "The 95% confidence intervals show uncertainty around the death rates.",
+  incidence: "Incidence shows how often lung cancer is diagnosed and can reflect differences in underlying risk.",
+};
 
 export function GoalThree({ investigate }: { investigate: (question: string) => void }) {
   const [sex, setSex] = useState<"women" | "men">("men");
   const [metric, setMetric] = useState<OutcomeMetric>("survival");
   const [expanded, setExpanded] = useState(false);
   const data = lungOutcomes(sex, metric);
+  const firstArea = data.rows[0];
+  const sortOrder = metric === "survival" ? "lowest" : "highest";
+  const unit = metric === "survival" ? "%" : " per 100,000 person-years";
   const displayed = expanded ? data.rows : data.rows.slice(0, 5);
   return (
     <section className="panel" id="goal-three" data-scroll-section aria-labelledby="goal-three-title">
@@ -36,13 +45,14 @@ export function GoalThree({ investigate }: { investigate: (question: string) => 
           </tbody>
         </table>
       </div>
-      <button type="button" aria-expanded={expanded} className="secondary-button mt-3" onClick={() => setExpanded(!expanded)}>{expanded ? "Show five highest values" : "Show all 22 reporting areas"}</button>
-      <p className="evidence-note my-4">These are descriptive comparisons. The ranges shown for mortality describe uncertainty. Incidence, survival and mortality reflect different aspects of cancer burden and cannot establish the cause or location of a pathway delay.</p>
-      <h3>Proposed next step for Lapland</h3>
+      <button type="button" aria-expanded={expanded} className="secondary-button mt-3" onClick={() => setExpanded(!expanded)}>{expanded ? `Show five ${sortOrder} values` : `Show all ${data.rows.length} reporting areas`}</button>
+      <p className="evidence-note my-4">{outcomeNotes[metric]} These figures alone cannot establish where a delay occurred or what caused it.</p>
+      <h3>Proposed next step for {firstArea.name}</h3>
+      <p className="mt-1 text-sm">{firstArea.name} has the {sortOrder} reported value among the areas shown for {sex} ({firstArea.value.toFixed(1)}{unit}, compared with {data.benchmark.toFixed(1)}{unit} nationally). Use this as a starting point for a local review.</p>
       <p className="mt-1 text-sm">Ask the county cancer lead and hospital analytics team to audit lung cancer stage at diagnosis, referral and treatment timestamps, and missing records. Compare like cohorts with a peer county before choosing an intervention.</p>
       <p className="mt-2 text-sm"><strong>First 30 days.</strong> Establish the starting wait and missing-date rate at each step. <strong>By day 90.</strong> Test one change where the audit finds the clearest delay.</p>
       <div className="my-3 grid gap-3 md:grid-cols-3">
-        {laplandOptions.map(({ title, rule, measure }) => <article className="evidence-note" key={title}><h3>{title}</h3><p>{rule}</p><p className="mt-2">{measure} Compare with the starting figures before expanding.</p></article>)}
+        {lungAuditOptions.map(({ title, rule, measure }) => <article className="evidence-note" key={title}><h3>{title}</h3><p>{rule}</p><p className="mt-2">{measure} Compare with the starting figures before expanding.</p></article>)}
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
         <button type="button" className="secondary-button" onClick={() => investigate(

@@ -43,6 +43,7 @@ export const outcomePeriod = "2020–2024";
 export function lungOutcomes(sex: Sex, metric: OutcomeMetric) {
   const metadata = outcomeMetrics[metric];
   const benchmark = rows.finland[sex][metadata.index];
+  const direction = metric === "survival" ? 1 : -1;
   return {
     ...metadata, benchmark,
     nationalInterval: metric === "mortality" ? rows.finland[sex].slice(3) : null,
@@ -53,6 +54,6 @@ export function lungOutcomes(sex: Sex, metric: OutcomeMetric) {
     rows: areas.map(({ id, name }) => ({
       id, name, value: rows[id][sex][metadata.index],
       interval: metric === "mortality" ? rows[id][sex].slice(3) : null,
-    })).sort((left, right) => right.value - left.value || left.name.localeCompare(right.name)),
+    })).sort((left, right) => direction * (left.value - right.value) || left.name.localeCompare(right.name)),
   };
 }

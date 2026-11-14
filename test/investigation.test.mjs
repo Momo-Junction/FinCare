@@ -21,10 +21,13 @@ test("lung outcome series cover all reporting areas with published benchmarks", 
       const data = lungOutcomes(sex, metric);
       assert.equal(data.rows.length, 22);
       assert.equal(new Set(data.rows.map(({ id }) => id)).size, 22);
+      const values = data.rows.map(({ value }) => value);
+      assert.deepEqual(values, values.toSorted((left, right) => metric === "survival" ? left - right : right - left));
       assert.ok(data.rows.every(({ value, interval }) => Number.isFinite(value)
         && (!interval || interval[0] <= value && value <= interval[1])));
     }
   }
+  assert.equal(lungOutcomes("men", "survival").rows[0].id, "satakunta");
   const [comparison] = runInvestigationTool("compare_lung_outcomes", {
     sex: "women", metric: "mortality", areaIds: ["lapland"],
   });
