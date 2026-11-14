@@ -12,6 +12,11 @@ Production AI requests are limited per running server instance. Set a monthly sp
 
 ## Junction demo
 
+Two questions to try in FinCare AI
+
+1. “Which county has the largest gap in colonoscopy follow-up after a positive colorectal screen, and what could its team try?”
+2. “How long do patients wait for referral and treatment in Helsinki?” FinCare explains the limits of its public county data and links to the published guidance.
+
 1. Start in Helsinki. The finalized 2024 attendance rate was 74.3%, compared with 81.6% in the Registry’s national benchmark excluding Åland.
 2. Open FinCare AI and ask how Helsinki compares with North Ostrobothnia. Follow up by asking what Helsinki should pilot and how to evaluate it. Expand Investigation Steps to see the evidence and proposal the tools returned.
 3. Compare pilot attendance with usual practice over the same follow-up period. Report the language-group gap where counts permit.

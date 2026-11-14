@@ -11,8 +11,6 @@ const toolLabels: Record<string, string> = {
   compare_regions: "Compared regions",
   analyze_care_pathway: "Checked each step of care",
   design_intervention_pilot: "Suggested what to try",
-  web_search: "Looked for recent sources",
-  web_fetch: "Read a public source",
 };
 
 type Exchange = {

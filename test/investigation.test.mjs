@@ -107,8 +107,16 @@ test("agent uses prior context, executes sequential tool calls and preserves ver
     ],
   }];
   const current = await (await POST(request())).json();
-  assert.match(current.answer, /2026/);
-  assert.equal(current.steps[0].results[0].sources[0].url, "https://thl.fi/en/");
+  assert.equal(current.answer, undefined);
+  assert.equal(current.steps.length, 0);
+  assert.ok(payload(mock.mock.calls.length - 1).tools.every(({ type }) => !type?.startsWith("web_")));
+
+  const timing = await (await POST(request([
+    { role: "user", content: "How long do patients wait for referral and treatment in Helsinki?" },
+  ]))).json();
+  assert.match(timing.answer, /no comparable public county data/);
+  assert.equal(timing.steps[0].results.length, 2);
+  assert.ok(timing.steps[0].results.every(({ sources }) => sources.length > 0));
 
   replies = [...Array(4).fill(regionCall), finish("Helsinki is below the benchmark.")];
   const capped = await (await POST(request())).json();

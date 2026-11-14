@@ -13,6 +13,16 @@ export type ActionPlan = {
   source: { name: string; url: string };
 };
 
+export const screeningReminderStudy = {
+  name: "Randomised trial of breast screening text reminders",
+  url: "https://pubmed.ncbi.nlm.nih.gov/25668008/",
+};
+
+export const colonoscopyNavigationStudy = {
+  name: "Randomised trial of help arranging follow-up colonoscopy",
+  url: "https://pubmed.ncbi.nlm.nih.gov/40163863/",
+};
+
 export function localPlan(stage: MeasuredStage, areaId: string): ActionPlan {
   const comparison = comparisons[stage];
   const area = comparison.areas.find(({ id }) => id === areaId)!;

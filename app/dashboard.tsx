@@ -8,7 +8,7 @@ import { sources } from "../lib/screening";
 import Investigation from "./investigation";
 import DashboardMotion from "./dashboard-motion";
 import { EvidenceCoverage, GoalThree, PilotPlanner } from "./goal-three";
-import { ActionCard, DecisionBrief, PriorityView } from "./action-plans";
+import { ActionCard, DecisionBrief, PriorityView, Recommendations } from "./action-plans";
 import { localPlan } from "../lib/action-plans";
 
 const counts = new Intl.NumberFormat("en-GB");
@@ -23,6 +23,7 @@ export default function Dashboard() {
         <div className="shell flex flex-wrap items-center justify-between gap-3 py-4">
           <a href="#overview" className="text-xl font-bold tracking-tight text-blue-950 no-underline">FinCare</a>
           <nav aria-label="Workspace" className="header-links">
+            <a href="#recommendations">Recommendations</a>
             <a href="#care-pathway">Care pathway</a>
             <a href="#where-to-act">Where to act</a>
             <a href="#goal-three">Cancer outcomes</a>
@@ -39,6 +40,7 @@ export default function Dashboard() {
           <p>Explore regional differences across the cancer care pathway.</p>
         </section>
         <DecisionBrief />
+        <Recommendations />
         <nav id="care-pathway" data-scroll-section aria-label="Cancer care pathway" className="pathway">
           <ol className="grid grid-cols-2 gap-px sm:grid-cols-4">
             {pathway.map((step) => (
@@ -109,7 +111,7 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
 }) {
   const indicator = comparisons[stage];
   const { areas: regional, national } = indicator;
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(stage === "diagnosis");
   const chartData = regional.filter(({ id }, index) => showAll || id === areaId || index < 3 || index >= regional.length - 3)
     .map(({ id, name, rate }) => ({ id, name, rate: Number(rate) }));
   const [brief, setBrief] = useState<Brief | null>(null);

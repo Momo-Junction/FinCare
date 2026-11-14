@@ -1,4 +1,4 @@
-import { localPlan, nationalPlan, rankedGaps, type ActionPlan } from "../lib/action-plans";
+import { localPlan, nationalPlan, rankedGaps, screeningReminderStudy, colonoscopyNavigationStudy, type ActionPlan } from "../lib/action-plans";
 import { comparisons } from "../lib/pathway";
 
 export function ActionCard({ plan }: { plan: ActionPlan }) {
@@ -29,6 +29,50 @@ export function DecisionBrief() {
     </ol>
     <p className="text-sm"><strong>How to tell if it helped.</strong> Compare attendance with a group receiving usual care over the same period.</p>
     <a className="text-sm" href={plan.source.url}>{plan.source.name}</a>
+  </section>;
+}
+
+export function Recommendations() {
+  const cards = [
+    {
+      title: "Check whether Helsinki’s invitations were sent",
+      action: "Match the invitation list to dispatch and return records before choosing a change.",
+      owner: "Helsinki screening lead and invitation provider",
+      evidence: "The Registry counts people selected for invitation and notes that some invitations may go unsent. This audit tests whether that explains part of the local gap.",
+      metric: "Share of invitees with a recorded dispatch status, and share whose invitations were unsent or returned.",
+      source: comparisons.screening.source,
+    },
+    {
+      title: "Test a text reminder where missed appointments are common",
+      action: "If the audit finds missed appointments after invitations were sent, compare a text reminder with the usual invitation process.",
+      owner: "Helsinki screening provider",
+      evidence: "A UK randomised trial found that text reminders increased attendance at first routine breast screening appointments. Helsinki would measure its own results.",
+      metric: "Share attending within the same follow-up period in each group. Also track who could receive a text.",
+      source: screeningReminderStudy,
+    },
+    {
+      title: "Help people arrange colonoscopy after a positive test",
+      action: "In Kymenlaakso, check why follow-up is missed. If booking is a barrier, test a call that helps people arrange the exam.",
+      owner: "Kymenlaakso screening lead and hospital endoscopy team",
+      evidence: "A US randomised trial found that help arranging care increased colonoscopy completion after an abnormal stool test.",
+      metric: "Share completing colonoscopy within the same follow-up period, compared with usual care. Track alternative exams separately.",
+      source: colonoscopyNavigationStudy,
+    },
+  ];
+  return <section id="recommendations" className="space-y-3 scroll-mt-32">
+    <h2>What local teams can do</h2>
+    <div className="grid gap-4 md:grid-cols-3">
+      {cards.map(({ title, action, owner, evidence, metric, source }) => <article key={title} className="panel flex flex-col gap-3 border-t-4 border-t-blue-600">
+        <h3>{title}</h3>
+        <p className="text-sm">{action}</p>
+        <dl className="space-y-2 text-sm">
+          <div><dt className="font-semibold">Who leads</dt><dd>{owner}</dd></div>
+          <div><dt className="font-semibold">Research behind it</dt><dd>{evidence}</dd></div>
+          <div><dt className="font-semibold">What to measure</dt><dd>{metric}</dd></div>
+        </dl>
+        <a className="mt-auto text-sm" href={source.url}>{source.name}</a>
+      </article>)}
+    </div>
   </section>;
 }
 
