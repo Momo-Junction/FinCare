@@ -157,8 +157,13 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
 }) {
   const indicator = comparisons[stage];
   const { areas: regional, national } = indicator;
-  const [showAll, setShowAll] = useState(stage === "diagnosis");
-  const chartData = regional.filter(({ id }, index) => showAll || id === areaId || index < 3 || index >= regional.length - 3);
+  const [showAll, setShowAll] = useState(false);
+  const [chartPage, setChartPage] = useState(0);
+  const pageSize = 6;
+  const pageStart = chartPage * pageSize;
+  const chartData = showAll
+    ? regional.slice(pageStart, pageStart + pageSize)
+    : regional.filter(({ id }, index) => id === areaId || index < 2 || index >= regional.length - 2);
   const [brief, setBrief] = useState<Brief | null>(null);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -226,10 +231,20 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
             {stage === "screening" ? <AttendanceChart area={area} /> :
               <p>{counts.format(area.attended)} of {counts.format(area.invited)} {indicator.denominator.toLowerCase()} in {area.name} were followed by a colonoscopy.</p>}
             <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-4">
-              <div><h3>Regional comparison</h3><p className="text-xs text-slate-600">{showAll ? "All reporting areas" : "Highest and lowest rates, plus your selection"}</p></div>
-              <button type="button" aria-expanded={showAll} aria-controls="regional-chart" className="secondary-button" onClick={() => setShowAll(!showAll)}>{showAll ? "Show summary" : "Show all areas"}</button>
+              <div><h3>Regional comparison</h3><p className="text-xs text-slate-600">{showAll ? "Ranked by rate, highest first" : "Your area, plus the two highest and two lowest rates"}</p></div>
+              <button type="button" aria-controls="regional-chart" className="secondary-button" onClick={() => {
+                if (!showAll) {
+                  setChartPage(Math.floor(regional.findIndex(({ id }) => id === areaId) / pageSize));
+                }
+                setShowAll(!showAll);
+              }}>{showAll ? "Back to overview" : "Browse all areas"}</button>
             </div>
             <RegionalBars id="regional-chart" rows={chartData} stage={stage} areaId={areaId} />
+            {showAll && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-blue-100 pt-3">
+              <button type="button" className="secondary-button" disabled={chartPage === 0} onClick={() => setChartPage(chartPage - 1)}>Previous</button>
+              <p aria-live="polite" className="text-xs tabular-nums text-slate-600">{pageStart + 1}–{pageStart + chartData.length} of {regional.length} areas</p>
+              <button type="button" className="secondary-button" disabled={pageStart + pageSize >= regional.length} onClick={() => setChartPage(chartPage + 1)}>Next</button>
+            </div>}
             <details className="my-4">
               <summary className="cursor-pointer font-semibold">View data table</summary>
               <div className="overflow-x-auto">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { comparisons, type MeasuredStage } from "../lib/pathway";
 import { isScreeningChartSpec, type ScreeningChartSpec } from "../lib/screening-chart";
 
@@ -49,7 +49,7 @@ export function RegionalBars({ rows, stage, areaId, id }: { rows: readonly Area[
   return <figure id={id} className="mt-3 min-w-0">
     <div key={`${areaId ?? ""}:${rows.map(({ id }) => id).join(",")}`} className="comparison-bars text-xs" style={{ height: rows.length * 32 + 38 }}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={[...rows]} layout="vertical" margin={{ right: 14 }}>
+        <BarChart data={[...rows]} layout="vertical" margin={{ right: 40 }}>
           <XAxis type="number" domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(value) => `${value}%`} />
           <CartesianGrid horizontal={false} stroke="#e6edf5" />
           <YAxis type="category" dataKey="name" interval={0} width={116} tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#334155" }} />
@@ -65,6 +65,7 @@ export function RegionalBars({ rows, stage, areaId, id }: { rows: readonly Area[
           }} />
           <Bar dataKey="rate" name={indicator.title} barSize={18} radius={[0, 6, 6, 0]} isAnimationActive={false}>
             {rows.map((row) => <Cell key={row.id} fill={row.id === areaId ? "#1555c0" : "#8baee6"} />)}
+            <LabelList dataKey="rate" position="right" formatter={(value) => `${Number(value).toFixed(1)}%`} fill="#334155" fontSize={10} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
