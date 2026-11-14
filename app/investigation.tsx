@@ -23,8 +23,8 @@ type Exchange = {
   steps: { tool: string; results: Step[]; error?: string }[];
 };
 
-export default function Investigation({ areaId, stage, open, setOpen, goalPrompt }: {
-  areaId: string; stage: Stage; open: boolean; setOpen: (open: boolean) => void; goalPrompt: { question: string } | null;
+export default function Investigation({ areaId, setAreaId, stage, open, setOpen, goalPrompt }: {
+  areaId: string; setAreaId: (areaId: string) => void; stage: Stage; open: boolean; setOpen: (open: boolean) => void; goalPrompt: { question: string } | null;
 }) {
   const [question, setQuestion] = useState("");
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
@@ -146,6 +146,12 @@ export default function Investigation({ areaId, stage, open, setOpen, goalPrompt
         </div>
         <button type="button" aria-label="Close FinCare AI" className="ai-close" onClick={() => setOpen(false)}>×</button>
       </header>
+      <div className="ai-location">
+        <label htmlFor="ai-area">Investigate in</label>
+        <select id="ai-area" value={areaId} disabled={pending} onChange={(event) => setAreaId(event.target.value)}>
+          {areas.map(({ id, name }) => <option key={id} value={id}>{name}</option>)}
+        </select>
+      </div>
       <div ref={conversation} className="ai-body">
       {!exchanges.length && (
         <div className="ai-context">

@@ -12,6 +12,24 @@ import { ActionCard, DecisionBrief, PriorityView, Recommendations } from "./acti
 import { localPlan } from "../lib/action-plans";
 
 const counts = new Intl.NumberFormat("en-GB");
+const investigationStarters = [
+  {
+    stage: "screening",
+    title: "Breast screening attendance",
+    question: "Compare breast screening attendance across Finland. Where is the largest shortfall against the national rate, where would the most additional people attend at that rate, and what should the local teams check first? Keep the two comparisons separate.",
+  },
+  {
+    stage: "diagnosis",
+    title: "Follow-up after a positive screen",
+    question: "Compare completed colonoscopy after a positive colorectal screen across Finland. Explain which areas have the largest gaps, what these figures can tell us, and how a local team could test a change and measure whether follow-up improves.",
+  },
+  {
+    stage: "treatment",
+    title: "Referral and treatment waits",
+    question: "What comparable public county data does FinCare have on referral and treatment waiting times? What dates should hospitals record to find where people wait the longest?",
+  },
+] as const;
+
 export default function Dashboard() {
   const [areaId, setAreaId] = useState("helsinki");
   const [stage, setStage] = useState<Stage>("screening");
@@ -35,9 +53,29 @@ export default function Dashboard() {
       </header>
       <main id="overview" className="shell py-7 md:py-10">
         <div className="space-y-6">
-        <section className="intro">
-          <h1>Cancer care equality in Finland</h1>
+        <section className="intro" aria-labelledby="overview-title">
+          <h1 id="overview-title">Cancer care equality in Finland</h1>
           <p>Explore regional differences across the cancer care pathway.</p>
+        </section>
+        <section className="ai-start" aria-labelledby="investigation-start-heading">
+          <div className="flex items-start gap-3">
+            <span className="ai-mark" aria-hidden="true">✦</span>
+            <div>
+              <h2 id="investigation-start-heading">Find where care could be fairer</h2>
+              <p className="mt-1 text-sm text-blue-100">Use FinCare AI to compare areas, see what the data can tell you, and plan what to check next.</p>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-2 md:grid-cols-3">
+            {investigationStarters.map(({ stage: topic, title, question }) => (
+              <button key={topic} type="button" className="ai-start-button" aria-controls="fincare-ai" onClick={() => {
+                setStage(topic);
+                setGoalPrompt({ question });
+                setAIOpen(true);
+              }}>
+                {title}<span aria-hidden="true">↗</span>
+              </button>
+            ))}
+          </div>
         </section>
         <DecisionBrief />
         <Recommendations />
@@ -62,7 +100,7 @@ export default function Dashboard() {
         <div id="pathway-evidence" key={stage} className="stage-enter">
           {stage === "referral" || stage === "treatment" ? (
             <TimingGap stage={stage} investigate={() => {
-              setGoalPrompt({ question: `Explain the published ${stage} guidance for ${areaId} and propose actions with an owner, starting point and measures for the first 90 days.` });
+              setGoalPrompt({ question: `Explain the published ${stage} guidance for the selected area and propose actions with an owner, starting point and measures for the first 90 days.` });
               setAIOpen(true);
             }} />
           ) : (
@@ -76,7 +114,7 @@ export default function Dashboard() {
         }} />
         <EvidenceCoverage />
         </div>
-        <Investigation areaId={areaId} stage={stage} open={aiOpen} setOpen={setAIOpen} goalPrompt={goalPrompt} />
+        <Investigation areaId={areaId} setAreaId={setAreaId} stage={stage} open={aiOpen} setOpen={setAIOpen} goalPrompt={goalPrompt} />
       </main>
     </>
   );

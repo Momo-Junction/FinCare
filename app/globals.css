@@ -56,6 +56,14 @@ th, td { @apply border-b border-slate-200 px-2 py-2; }
   @apply fixed right-4 bottom-4 z-40 rounded-full bg-blue-700 px-5 py-3 text-white shadow-lg ring-1 ring-blue-800/15 hover:bg-blue-800 sm:right-7 sm:bottom-7;
 }
 .ai-launcher span { @apply mr-1 text-blue-200; }
+.ai-start {
+  @apply rounded-3xl border border-blue-900 p-4 text-white shadow-lg sm:p-6;
+  background: radial-gradient(ellipse at 85% 0%, #3356bc 0%, transparent 64%), linear-gradient(115deg, #142450, #1d40a3);
+}
+.ai-start-button {
+  @apply flex min-h-12 items-center justify-between gap-3 rounded-xl border border-white/25 bg-white/10 px-3 text-left text-sm text-white transition-colors hover:bg-white/20 focus-visible:outline-white;
+}
+.ai-start-button span { @apply text-blue-200; }
 .ai-window {
   @apply fixed inset-x-0 bottom-0 z-50 flex h-[min(48rem,calc(100dvh-1rem))] flex-col overflow-hidden rounded-t-3xl border border-blue-200 bg-white outline-none sm:right-7 sm:bottom-7 sm:left-auto sm:h-[min(45rem,calc(100dvh-3.5rem))] sm:w-[33rem] sm:rounded-3xl;
   box-shadow: 0 24px 80px -20px #142d6666;
@@ -68,6 +76,9 @@ th, td { @apply border-b border-slate-200 px-2 py-2; }
 }
 .ai-mark { @apply grid size-11 shrink-0 place-items-center rounded-2xl border border-white/25 bg-white/15 text-2xl text-blue-100; }
 .ai-close { @apply grid size-11 shrink-0 place-items-center rounded-xl p-0 text-2xl leading-none hover:bg-white/15 focus-visible:outline-white; }
+.ai-location { @apply flex shrink-0 items-center gap-3 border-b border-blue-100 bg-white px-4 py-2 text-sm text-blue-950 sm:px-5; }
+.ai-location label { @apply shrink-0 font-semibold; }
+.ai-location select { @apply mt-0 min-h-11 min-w-0 flex-1 border-blue-100 bg-blue-50 text-base disabled:opacity-60; }
 .ai-body { @apply min-h-0 flex-1 overscroll-contain overflow-y-auto bg-slate-50/75 p-4 sm:px-5; }
 .ai-context { @apply rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-4 text-sm leading-relaxed text-blue-950; }
 .ai-context h3 { @apply mb-1; }

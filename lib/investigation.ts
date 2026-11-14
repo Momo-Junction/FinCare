@@ -2,6 +2,7 @@ import { evidenceFor, pilots, stagePilots } from "./brief.ts";
 import { comparisons, timingGaps, type MeasuredStage } from "./pathway.ts";
 import { areas, sources } from "./screening.ts";
 import { lungOutcomes, outcomeCoverage, outcomeMetrics, outcomePeriod, type OutcomeMetric } from "./lung-outcomes.ts";
+import { rankedGaps } from "./action-plans.ts";
 
 export type EvidenceLink = { name: string; url: string };
 export type Step = { title: string; details: string[]; sources: EvidenceLink[] };
@@ -47,12 +48,18 @@ function isMeasured(value: unknown): value is MeasuredStage {
 function compare(stage: MeasuredStage, ids?: string[]): Step {
   const comparison = comparisons[stage];
   const rows = comparison.areas.filter(({ id }) => !ids || ids.includes(id));
+  const gaps = ids ? [] : rankedGaps(stage);
+  const largestRateGap = gaps[0];
+  const largestCountGap = gaps.reduce<(typeof gaps)[number] | undefined>((largest, area) =>
+    !largest || area.fewerAtNationalRate > largest.fewerAtNationalRate ? area : largest, undefined);
   return {
     title: comparison.title,
     details: [
       `${comparison.year} · ${comparison.coverage}`,
       comparison.definition,
       `National benchmark: ${comparison.national.rate.toFixed(1)}% (${comparison.national.attended.toLocaleString("en-GB")} of ${comparison.national.invited.toLocaleString("en-GB")}).`,
+      ...(largestRateGap ? [`Largest shortfall versus national rate: ${largestRateGap.name} (${Math.abs(largestRateGap.gap).toFixed(1)} percentage points).`] : []),
+      ...(largestCountGap ? [`Largest estimated additional count at the national rate: ${largestCountGap.name} (about ${largestCountGap.fewerAtNationalRate.toLocaleString("en-GB")} in the same cohort). This is a comparison scenario.`] : []),
       ...rows.map(({ name, attended, invited, rate, gap }) =>
         `${name}: ${rate.toFixed(1)}% (${attended.toLocaleString("en-GB")} of ${invited.toLocaleString("en-GB")}); ${gap > 0 ? "+" : ""}${gap.toFixed(1)} percentage points versus benchmark.`),
       comparison.limitation,
