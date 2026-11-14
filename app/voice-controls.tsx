@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 type Recognition = {
   lang: string;
@@ -13,8 +13,9 @@ type Recognition = {
   abort(): void;
 };
 
-export default function VoiceControls({ open, pending, answer, onTranscript }: {
+export default function VoiceControls({ open, pending, answer, onTranscript, input, send }: {
   open: boolean; pending: boolean; answer?: string; onTranscript: (text: string) => void;
+  input: ReactNode; send: ReactNode;
 }) {
   const [microphone, setMicrophone] = useState<"idle" | "starting" | "listening" | "stopping">("idle");
   const [speaking, setSpeaking] = useState(false);
@@ -117,21 +118,25 @@ export default function VoiceControls({ open, pending, answer, onTranscript }: {
     window.speechSynthesis.speak(utterance);
   }
 
-  return <div className="mt-2 text-xs text-slate-600">
-    <div className="flex flex-wrap gap-x-4">
-      <button type="button" className="inline-flex min-h-11 items-center gap-2 px-1 py-1 text-blue-800" disabled={pending || speaking || microphone === "stopping"} onClick={dictate}>
+  const microphoneLabel = microphone === "idle" ? "Use microphone" : microphone === "starting" ? "Cancel microphone" : "Stop listening";
+  return <>
+    <div className="flex items-center gap-1 rounded-2xl border border-slate-300 bg-slate-50 p-1 focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600">
+      {input}
+      <button type="button" aria-label={microphoneLabel} title={microphoneLabel} className="grid size-11 shrink-0 place-items-center rounded-xl p-0 text-blue-800 hover:bg-blue-100" disabled={pending || speaking || microphone === "stopping"} onClick={dictate}>
         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <rect x="9" y="2" width="6" height="13" rx="3" />
           <path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-3 0h6" />
         </svg>
-        {microphone === "idle" ? "Use microphone" : microphone === "starting" ? "Cancel microphone" : "Stop listening"}
       </button>
+      {send}
+    </div>
+    <div className="mt-2 text-xs text-slate-600">
       {canSpeak && answer && <button type="button" className="min-h-11 px-1 py-1 text-blue-800" disabled={pending || microphone !== "idle"} onClick={readAnswer}>
         {speaking ? "Stop reading" : "Read last answer"}
       </button>}
-    </div>
-    <p role="status">{notice || ({
+      <p role="status">{notice || ({
       idle: "", starting: "Waiting for the microphone…", listening: "Listening in English…", stopping: "Finishing dictation…",
-    })[microphone]}</p>
-  </div>;
+      })[microphone]}</p>
+    </div>
+  </>;
 }

@@ -219,18 +219,15 @@ export default function Investigation({ areaId, setAreaId, stage, open, setOpen,
       </div>
       <form onSubmit={submit} className="ai-composer">
         <label htmlFor="ai-question" className="sr-only">Ask FinCare AI a question</label>
-        <div className="flex items-center gap-2">
-          <input id="ai-question" value={question} maxLength={800} onChange={(event) => setQuestion(event.target.value)}
-            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-slate-50 p-3 text-base focus:border-blue-600 focus:outline-blue-600" placeholder="Ask about this area…" />
-          <button type="submit" aria-label="Send question" disabled={pending || !question.trim()} className="ai-send">
+        {open && <VoiceControls open={open} pending={pending} answer={latest?.answer}
+          onTranscript={(transcript) => setQuestion((draft) => [draft.trim(), transcript].filter(Boolean).join(" ").slice(0, 800))}
+          input={<input id="ai-question" value={question} maxLength={800} onChange={(event) => setQuestion(event.target.value)}
+            className="min-w-0 flex-1 bg-transparent px-2 py-3 text-base outline-none" placeholder="Ask about this area…" />}
+          send={<button type="submit" aria-label="Send question" disabled={pending || !question.trim()} className="ai-send">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 19V5m-6 6 6-6 6 6" />
             </svg>
-          </button>
-        </div>
-        {open && <VoiceControls open={open} pending={pending} answer={latest?.answer} onTranscript={(transcript) =>
-          setQuestion((draft) => [draft.trim(), transcript].filter(Boolean).join(" ").slice(0, 800))
-        } />}
+          </button>} />}
         <p className="text-xs text-slate-600">For service planning. Leave out patient details.</p>
       </form>
     </section>
