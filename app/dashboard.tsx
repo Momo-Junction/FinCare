@@ -56,14 +56,15 @@ export default function Dashboard() {
         </div>
         <DashboardMotion />
       </header>
-      <main id="overview" className="shell py-7 md:py-10">
+      <main id="overview" className="shell py-7 md:py-9">
         <div className="space-y-6">
         <section className="intro" aria-labelledby="overview-title">
           <h1 id="overview-title">Cancer care equality in Finland</h1>
           <p>Explore regional differences across the cancer care pathway.</p>
         </section>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <DecisionBrief />
-        <section className="ai-start" aria-labelledby="investigation-start-heading">
+        <section className="ai-start min-w-0" aria-labelledby="investigation-start-heading">
           <div className="flex items-start gap-3">
             <span className="ai-mark" aria-hidden="true">✦</span>
             <div>
@@ -71,7 +72,7 @@ export default function Dashboard() {
               <p className="mt-1 text-sm text-blue-100">Use FinCare AI to compare areas, see what the data can tell you, and plan what to check next.</p>
             </div>
           </div>
-          <div className="mt-5 grid gap-2 md:grid-cols-3">
+          <div className="mt-4 grid gap-2 md:grid-cols-3 xl:grid-cols-1">
             {investigationStarters.map(({ stage: topic, title, question }) => (
               <button key={topic} type="button" className="ai-start-button" aria-controls="fincare-ai" onClick={() => {
                 setStage(topic);
@@ -83,8 +84,10 @@ export default function Dashboard() {
             ))}
           </div>
         </section>
-        <Recommendations />
-        <nav id="care-pathway" data-scroll-section aria-label="Cancer care pathway" className="pathway">
+        </div>
+        <section id="care-pathway" data-scroll-section className="panel" aria-labelledby="care-pathway-title">
+        <h2 id="care-pathway-title" className="mb-3">Cancer care pathway</h2>
+        <nav aria-label="Cancer care pathway" className="pathway">
           <ol className="grid grid-cols-2 gap-px sm:grid-cols-4">
             {pathway.map((step) => (
               <li key={step.id} className="relative">
@@ -102,6 +105,7 @@ export default function Dashboard() {
             ))}
           </ol>
         </nav>
+        </section>
         <div id="pathway-evidence" key={stage} className="stage-enter">
           {stage === "referral" || stage === "treatment" ? (
             <TimingGap stage={stage} investigate={() => {
@@ -115,6 +119,7 @@ export default function Dashboard() {
             }} />
           )}
         </div>
+        <Recommendations />
         <PriorityView />
         <GoalThree investigate={(question) => {
           setGoalPrompt({ question });
