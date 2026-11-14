@@ -8,6 +8,8 @@ Use Node.js 22 or later and pnpm. Run `pnpm install --frozen-lockfile`, then `pn
 
 To enable FinCare AI, copy `.env.example` to `.env.local`, set `ANTHROPIC_API_KEY` in that file, and restart the server. The underlying model defaults to Claude Sonnet 5.5. The dashboard and curated pilots remain available without an API key. Run `pnpm test`, `pnpm check` and `pnpm build` to verify the application.
 
+Production AI requests are limited per running server instance. Set a monthly spend limit on FinCare’s Claude workspace to enforce a budget across instances. The Claude Console requires a workspace member with billing permissions to set that limit.
+
 ## Junction demo
 
 1. Start in Helsinki. The finalized 2024 attendance rate was 74.3%, compared with 81.6% in the Registry’s national benchmark excluding Åland.
@@ -16,7 +18,7 @@ To enable FinCare AI, copy `.env.example` to `.env.local`, set `ANTHROPIC_API_KE
 4. Switch to Diagnosis. In Helsinki, 67.8% of people with a positive colorectal screen attended colonoscopy versus 72.7% nationally. Ask FinCare AI what the screening and hospital endoscopy teams can check and pilot.
 5. Open Referral and Treatment to see what teams should collect before comparing waiting times.
 6. Open Goal 3 outcome evidence. Compare lung cancer mortality in men in Lapland with Finland and use FinCare AI to outline a local audit. Mortality is an outcome signal and cannot identify a specific delay.
-7. Expand **Plan a pilot target** on Screening or Diagnosis to see what a hypothetical improvement would mean at the selected area’s observed cohort size. The slider produces a planning scenario, with no estimate of the pilot’s actual effect.
+7. Expand **Plan a pilot target** on Screening or Diagnosis to see how many more people would attend at the selected share of the gap to the national rate. This is a planning scenario.
 
 ## Data and FinCare AI
 

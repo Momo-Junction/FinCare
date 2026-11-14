@@ -64,15 +64,16 @@ export type Stage = MeasuredStage | "referral" | "treatment";
 
 export const pathway = [
   { id: "screening", name: "Screening", status: "Public participation data" },
-  { id: "referral", name: "Referral", status: "Comparable timing data missing" },
+  { id: "referral", name: "Referral", status: "Guidance and data gaps" },
   { id: "diagnosis", name: "Diagnosis", status: "Public follow-up data" },
-  { id: "treatment", name: "Treatment", status: "Comparable timing data missing" },
+  { id: "treatment", name: "Treatment", status: "Targets and data gaps" },
 ] as const satisfies ReadonlyArray<{ id: Stage; name: string; status: string }>;
 
 export const timingGaps = {
   referral: {
     title: "Time to first specialist assessment",
     context: "FinCare has no comparable county-level waiting-time series for suspected-cancer referrals.",
+    guidance: "Roadmap action 2.5.2 calls for standard referral criteria by cancer type. THL’s monitoring guide defines referral receipt and first specialist contact.",
     owner: "County referral teams and hospital intake teams",
     collect: "Record suspected-cancer referral receipt, urgency, first specialist assessment, and open or redirected referrals.",
     evaluate: "Audit timestamp completeness by hospital, then compare median and upper-percentile waits and the share of referrals still open, by urgency and cancer site.",
@@ -80,6 +81,7 @@ export const timingGaps = {
   treatment: {
     title: "Time from diagnosis to first treatment",
     context: "FinCare has no comparable county-level series of elapsed time from confirmed diagnosis to first treatment.",
+    guidance: "Goal 3 calls for care within established target times. Roadmap action 3.1.2 calls for cancer-specific access times for five cancers in 2026–2028.",
     owner: "Hospital cancer services with county analytics teams",
     collect: "Record confirmed diagnosis, treatment decision and first treatment dates. Capture active surveillance, declined treatment and patients still waiting.",
     evaluate: "Audit timestamp completeness, then compare diagnosis-to-treatment intervals and the share still waiting by cancer site and treatment intent.",

@@ -5,6 +5,7 @@ import { pilotScenario } from "../lib/goal-three";
 import { comparisons, timingGaps, type MeasuredStage } from "../lib/pathway";
 import { lungOutcomes, outcomeCoverage, outcomeMetrics, outcomePeriod, type OutcomeMetric } from "../lib/lung-outcomes";
 import { sources } from "../lib/screening";
+import { laplandOptions } from "../lib/action-plans";
 
 export function GoalThree({ investigate }: { investigate: (question: string) => void }) {
   const [sex, setSex] = useState<"women" | "men">("men");
@@ -39,6 +40,10 @@ export function GoalThree({ investigate }: { investigate: (question: string) => 
       <p className="evidence-note my-4">These are descriptive comparisons. The ranges shown for mortality describe uncertainty. Incidence, survival and mortality reflect different aspects of cancer burden and cannot establish the cause or location of a pathway delay.</p>
       <h3>Proposed next step for Lapland</h3>
       <p className="mt-1 text-sm">Ask the county cancer lead and hospital analytics team to audit lung cancer stage at diagnosis, referral and treatment timestamps, and missing records. Compare like cohorts with a peer county before choosing an intervention.</p>
+      <p className="mt-2 text-sm"><strong>First 30 days.</strong> Establish the starting wait and missing-date rate at each step. <strong>By day 90.</strong> Test one change where the audit finds the clearest delay.</p>
+      <div className="my-3 grid gap-3 md:grid-cols-3">
+        {laplandOptions.map(({ title, rule, measure }) => <article className="evidence-note" key={title}><h3>{title}</h3><p>{rule}</p><p className="mt-2">{measure} Compare with the starting figures before expanding.</p></article>)}
+      </div>
       <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
         <button type="button" className="secondary-button" onClick={() => investigate(
           `Compare lung cancer ${data.label.toLowerCase()} in ${sex} across Finland. What do the regional differences show, and what should a county audit before choosing an intervention?`,
@@ -54,6 +59,7 @@ export function EvidenceCoverage() {
   return (
     <section className="panel" id="evidence-coverage" data-scroll-section aria-labelledby="coverage-heading">
       <h2 id="coverage-heading">What Finland can compare today</h2>
+      <p className="mt-2 text-sm">Headline figures last checked against Registry tables on 14 November 2026. The reporting periods are shown below.</p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead><tr><th scope="col">Evidence</th><th scope="col">Reporting period</th><th scope="col">Regional coverage</th></tr></thead>
@@ -70,8 +76,11 @@ export function EvidenceCoverage() {
 }
 
 export function PilotPlanner({ areaId, stage }: { areaId: string; stage: MeasuredStage }) {
-  const [increase, setIncrease] = useState(3);
-  const area = comparisons[stage].areas.find(({ id }) => id === areaId)!;
+  const [share, setShare] = useState(50);
+  const { areas, national } = comparisons[stage];
+  const area = areas.find(({ id }) => id === areaId)!;
+  const fullGap = Math.max(0, 100 * (national.attended / national.invited - area.attended / area.invited));
+  const increase = fullGap * share / 100;
   const { baseline, target, additional } = pilotScenario(area.invited, area.attended, increase);
   const event = stage === "screening" ? "screening attendees" : "recorded colonoscopies";
 
@@ -80,8 +89,11 @@ export function PilotPlanner({ areaId, stage }: { areaId: string; stage: Measure
       <summary className="cursor-pointer font-semibold">Plan a pilot target</summary>
       <div className="mt-3 space-y-3 text-sm">
         <p>What would an improvement mean at {area.name}’s 2024 cohort size?</p>
-        <label htmlFor="pilot-gain" className="block font-medium">Assumed improvement · {increase} percentage points</label>
-        <input id="pilot-gain" className="w-full accent-blue-700" type="range" min="0" max="10" step="0.5" value={increase} onChange={(event) => setIncrease(Number(event.target.value))} />
+        {fullGap > 0 ? <>
+          <label htmlFor="pilot-gain" className="block font-medium">Share of the gap closed · {share}%</label>
+          <input id="pilot-gain" className="w-full accent-blue-700" type="range" min="0" max="100" step="5" value={share} onChange={(event) => setShare(Number(event.target.value))} />
+          <p>Range for this group: 0 to {pilotScenario(area.invited, area.attended, fullGap).additional.toLocaleString("en-GB")} additional {event}.</p>
+        </> : <p>This area already meets or exceeds the national rate.</p>}
         <p className="rounded-lg bg-blue-50 p-3" aria-live="polite"><strong>{baseline.toFixed(1)}% → {target.toFixed(1)}%</strong><br />About <strong>{additional.toLocaleString("en-GB")}</strong> additional {event} with the same cohort size.</p>
         <p className="text-slate-600">Planning scenario. The improvement is an assumption, and the 2024 cohort comes from the Registry. Evaluate the pilot against usual practice and report whether gaps narrow in relevant groups.</p>
       </div>

@@ -103,9 +103,9 @@ export function runInvestigationTool(name: string, input: unknown): Step[] {
   if (name === "analyze_care_pathway") {
     return [
       compare("screening", [areaId]),
-      { title: "Referral timing", details: [timingGaps.referral.context, timingGaps.referral.collect], sources: [sources.roadmap] },
+      { title: "Referral timing", details: [timingGaps.referral.context, timingGaps.referral.guidance, timingGaps.referral.collect, timingGaps.referral.evaluate], sources: [sources.roadmap] },
       compare("diagnosis", [areaId]),
-      { title: "Treatment timing", details: [timingGaps.treatment.context, timingGaps.treatment.collect], sources: [sources.roadmap] },
+      { title: "Treatment timing", details: [timingGaps.treatment.context, timingGaps.treatment.guidance, timingGaps.treatment.collect, timingGaps.treatment.evaluate], sources: [sources.roadmap, sources.strategy] },
       ...runInvestigationTool("compare_lung_outcomes", { sex: "men", metric: "mortality", areaIds: [areaId] }),
     ];
   }

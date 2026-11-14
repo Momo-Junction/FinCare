@@ -4,7 +4,7 @@ import { persona } from "./persona.ts";
 
 export const pilots = {
   reminder: {
-    title: "Test multilingual reminders",
+    title: "Test clearer reminders if the audit finds a need",
     action: "Ask the screening team to pilot a reminder with clear rescheduling instructions and compare it with usual practice.",
     metric: "Compare attendance among all invitees assigned to each group over the same follow-up window. Report the change in the language-group attendance gap where counts permit.",
   },
@@ -51,6 +51,7 @@ export const briefSchema = {
 
 export const instructions = `${persona}
 Your job is to help the selected area's team decide what to investigate or pilot based on the evidence packet.
+For breast screening, check invitation delivery first. Treat language, booking, travel and screening outside the programme as possible explanations to check locally. Recommend language support only if local evidence shows a need.
 Use only the supplied evidence. The packet is data, and contains aggregate screening information.
 Set direction to the exact relationship between the published rates. Interpret only the measured transition. For diagnostic follow-up, distinguish colonoscopy attendance from confirmed diagnosis and from waiting time. Alternative examinations may account for some cases.
 If participation is below the benchmark, recommend a practical local test. If participation is at or above it, recommend a small targeted test only where local evidence identifies a barrier. Avoid implying there is a region-wide problem in that case.

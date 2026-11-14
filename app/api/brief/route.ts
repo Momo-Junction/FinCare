@@ -1,6 +1,7 @@
 import { briefSchema, evidenceFor, instructions, isBrief, stagePilots } from "../../../lib/brief.ts";
 import { comparisons } from "../../../lib/pathway.ts";
 import { sendMessage } from "../../../lib/anthropic.ts";
+import { limitAI } from "../../../lib/ai-limit.ts";
 
 export async function POST(request: Request) {
   const body: unknown = await request.json().catch(() => null);
@@ -14,6 +15,10 @@ export async function POST(request: Request) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return Response.json({ error: "FinCare AI needs a server-side API key." }, { status: 503 });
+  if (process.env.NODE_ENV === "production") {
+    const limited = limitAI(request);
+    if (limited) return limited;
+  }
 
   try {
     const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";

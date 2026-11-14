@@ -3,6 +3,16 @@ import test from "node:test";
 import { POST } from "../app/api/investigate/route.ts";
 import { runInvestigationTool } from "../lib/investigation.ts";
 import { pilotScenario } from "../lib/goal-three.ts";
+import { rankedGaps } from "../lib/action-plans.ts";
+
+test("priority tables rank each measure independently and use the national counts for estimates", () => {
+  const [helsinki] = rankedGaps("screening");
+  assert.equal(helsinki.id, "helsinki");
+  assert.equal(helsinki.fewerAtNationalRate, Math.round(38630 * 281369 / 344851) - 28686);
+  const [followUp] = rankedGaps("diagnosis");
+  assert.equal(followUp.id, "kymenlaakso");
+  assert.equal(followUp.fewerAtNationalRate, Math.round(496 * 10244 / 14083) - 308);
+});
 import { lungOutcomes, outcomeMetrics } from "../lib/lung-outcomes.ts";
 
 test("lung outcome series cover all reporting areas with published benchmarks", () => {
