@@ -4,7 +4,7 @@ FinCare traces four stages of cancer care in Finland: Screening → Referral →
 
 ## Run locally
 
-Use Node.js 22 or later and pnpm. Run `pnpm install --frozen-lockfile`, then `pnpm dev` and open [FinCare](http://127.0.0.1:3000).
+Use Node.js 22 or later and pnpm. Run `pnpm install --frozen-lockfile`, then `pnpm dev` and open https://fin-care-lyart.vercel.app/.
 
 To enable FinCare AI, copy `.env.example` to `.env.local`, set `ANTHROPIC_API_KEY` in that file, and restart the server. The underlying model defaults to Claude Sonnet 5.5. The dashboard and curated pilots remain available without an API key. Run `pnpm test`, `pnpm check` and `pnpm build` to verify the application.
 
