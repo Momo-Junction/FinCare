@@ -66,6 +66,9 @@ async function investigate(request: Request, onTool?: (tool: string) => void) {
     return Response.json({ error: "Choose a region and enter a question of up to 800 characters." }, { status: 400 });
   }
   const question = history.at(-1).content as string;
+  if (/^(?:what (?:the hell )?is (?:this(?: stuff)?|it)(?: i don['’]?t understand)?|i don['’]?t understand)[.!?\s]*$/i.test(question.trim())) {
+    return Response.json({ answer: "Which part should I explain in simpler words: what FinCare does, what the numbers mean, or what the local team could try?", steps: [] });
+  }
   if (/^(?:hi|hello|hey|thanks|thank you)[.!\s]*$/i.test(question.trim())) {
     return Response.json({ answer: scopeReply, steps: [] });
   }
@@ -110,6 +113,7 @@ async function investigate(request: Request, onTool?: (tool: string) => void) {
   const signal = AbortSignal.any([request.signal, AbortSignal.timeout(48_000)]);
   const context = JSON.stringify({ selectedArea: areaId, selectedStage: stage, reportingAreas: areas.map(({ id, name }) => ({ id, name })) });
   const checked = new Map<string, Step[]>();
+  let requestedRewrite = false;
   try {
     for (let round = 0; round <= maxRounds; round++) {
       const response = await sendMessage(apiKey, {
@@ -141,6 +145,12 @@ async function investigate(request: Request, onTool?: (tool: string) => void) {
         if (answer === scopeReply || answer === personalReply) return Response.json({ answer, steps });
         const shortQuestion = /^(?:Which|What|Where|Do you mean|Could you tell me) [^.!?\n]{1,149}\?$/i.test(answer);
         if ((!hasEvidence && !shortQuestion) || !answer || answer.length > 3200 || unsupportedProse.test(prose)) {
+          if (hasEvidence && answer && !requestedRewrite && round < maxRounds) {
+            requestedRewrite = true;
+            messages.push({ role: "assistant", content: answer });
+            messages.push({ role: "user", content: "Rewrite your answer in short everyday language using the tool results already returned. Remove all numbers (including numbers written as words), percentages, dates and links. Keep the direct answer, practical next step and how to tell whether it helped." });
+            continue;
+          }
           return fallback(steps, wantsAction);
         }
         return Response.json({ answer, steps });
@@ -183,17 +193,19 @@ function fallback(steps: { tool: string; results: Step[]; error?: string }[], wa
   const pilot = steps.findLast(({ tool, results }) => tool === "design_intervention_pilot" && results.length)?.results[0];
   const comparisons = results.filter(({ details }) => details.length > 0 && !details[0].startsWith("Objective:"));
   const findings = [...new Map(comparisons.map((result) => [result.title, result])).values()].slice(0, 4);
-  const sections = findings.map(({ title, details }) => {
-    const firstLines = details.slice(0, 5);
-    if (details.length > 5) firstLines.push(details.at(-1)!);
-    return `${title}\n${firstLines.join("\n")}`;
+  const sections = findings.map(({ title, details, localComparison }) => {
+    const localRate = localComparison && details.find((line) => line.includes("percentage points versus benchmark"));
+    const finlandRate = details.find((line) => line.startsWith("National benchmark:"));
+    return localRate && finlandRate
+      ? `${title}\n${localRate.replace("versus benchmark", "compared with Finland")}. ${finlandRate.replace("National benchmark:", "Finland overall:")}`
+      : `${title}\n${finlandRate ?? details[0]} See “What I checked” for the details.`;
   });
   const localComparisons = results.flatMap(({ localComparison }) => localComparison ? [localComparison] : []);
   const context = localComparisons[0];
   const plan = wantsAction && !pilot && context && localComparisons.every(
     ({ areaId, stage }) => areaId === context.areaId && stage === context.stage,
   ) ? localPlan(context.stage, context.areaId) : undefined;
-  if (pilot) sections.unshift(`${pilot.title}\n${pilot.details.join("\n")}`);
+  if (pilot) sections.push(`${pilot.title}\n${pilot.details.filter((line) => /^(Who can act|What to check first|Evaluation):/.test(line)).join("\n\n")}`);
   if (plan) sections.unshift(
     `Suggested next step for ${plan.owner}\n${plan.first30} ${plan.first90}`,
     `How to measure it\n${plan.baseline} ${plan.measure}`,

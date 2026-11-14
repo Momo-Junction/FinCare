@@ -301,8 +301,8 @@ function Answer({ text, fallback, animate, conversation }: {
         {fallback === "evidence-only" ? "Evidence found" : fallback === "action-plan" ? "Evidence and suggested next steps" : "FinCare AI"}
       </h3>
       {fallback && <p className="mb-3 text-xs text-slate-600">FinCare couldn’t finish the full answer. Here’s what its data shows.</p>}
-      <p className="sr-only">{text}</p>
-      <div aria-hidden="true" className="space-y-3">
+      {typing && <p className="sr-only">{text}</p>}
+      <div aria-hidden={typing || undefined} className="space-y-3">
         {paragraphs.map((paragraph, index) => (
           <p key={index} className="whitespace-pre-wrap break-words">
             {paragraph}{typing && index === paragraphs.length - 1 && <span className="ai-caret" />}

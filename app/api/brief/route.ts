@@ -22,13 +22,22 @@ export async function POST(request: Request) {
 
   try {
     const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
+    const direction = area.gap < 0 ? "below" : area.gap > 0 ? "above" : "equal";
+    const schema = {
+      ...briefSchema,
+      properties: {
+        ...briefSchema.properties,
+        direction: { type: "string", enum: [direction] },
+        pilot: { type: "string", enum: stagePilots[stage] },
+      },
+    };
     const response = await sendMessage(apiKey, {
         max_tokens: 1500,
         system: instructions,
         messages: [{ role: "user", content: JSON.stringify(evidenceFor(area.id, stage)) }],
         output_config: {
           ...(model === "claude-sonnet-5-5" ? { effort: "low" } : {}),
-          format: { type: "json_schema", schema: briefSchema },
+          format: { type: "json_schema", schema },
         },
     }, AbortSignal.timeout(25_000));
     if (!response.ok) {
@@ -42,7 +51,6 @@ export async function POST(request: Request) {
     const brief: unknown = message.stop_reason === "end_turn" && output?.type === "text"
       ? JSON.parse(output.text)
       : null;
-    const direction = area.gap < 0 ? "below" : area.gap > 0 ? "above" : "equal";
     if (!isBrief(brief) || brief.direction !== direction || !stagePilots[stage].some((id) => id === brief.pilot)) {
       return Response.json({ error: "FinCare AI couldn’t check its suggestion. Try again or use the plan below." }, { status: 502 });
     }

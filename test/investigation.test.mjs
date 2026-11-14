@@ -89,6 +89,11 @@ test("agent uses prior context, executes sequential tool calls and preserves ver
   ]))).json();
   assert.match(help.answer, /FinCare helps you/);
   assert.deepEqual(help.steps, []);
+  const confused = await (await POST(request([
+    { role: "user", content: "what the hell is it" },
+  ]))).json();
+  assert.match(confused.answer, /Which part should I explain/);
+  assert.deepEqual(confused.steps, []);
 
   process.env.ANTHROPIC_API_KEY = "test-key";
   const toolUse = (id, name, input) => ({
@@ -114,6 +119,11 @@ test("agent uses prior context, executes sequential tool calls and preserves ver
   const clarification = await (await POST(request())).json();
   assert.equal(clarification.answer, "Which area would you like to compare?");
   assert.deepEqual(clarification.steps, []);
+
+  replies = [regionCall, finish("Attendance improved by 8%."), finish("Helsinki’s screening attendance is below Finland’s rate.")];
+  const repaired = await (await POST(request())).json();
+  assert.equal(repaired.answer, "Helsinki’s screening attendance is below Finland’s rate.");
+  assert.equal(repaired.fallback, undefined);
 
   replies = [regionCall, finish("Attendance improved by 8%.")];
   const fallback = await (await POST(request())).json();
