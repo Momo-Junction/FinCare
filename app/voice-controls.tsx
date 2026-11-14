@@ -7,14 +7,16 @@ type Recognition = {
   onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
+  onstart: (() => void) | null;
   start(): void;
+  stop(): void;
   abort(): void;
 };
 
 export default function VoiceControls({ open, pending, answer, onTranscript }: {
   open: boolean; pending: boolean; answer?: string; onTranscript: (text: string) => void;
 }) {
-  const [listening, setListening] = useState(false);
+  const [microphone, setMicrophone] = useState<"idle" | "starting" | "listening" | "stopping">("idle");
   const [speaking, setSpeaking] = useState(false);
   const [notice, setNotice] = useState("");
   const [canSpeak, setCanSpeak] = useState(false);
@@ -23,12 +25,12 @@ export default function VoiceControls({ open, pending, answer, onTranscript }: {
 
   useEffect(() => {
     setCanSpeak("speechSynthesis" in window);
-    setListening(false);
+    setMicrophone("idle");
     setSpeaking(false);
     return () => {
       const recognition = activeRecognition.current;
       if (recognition) {
-        recognition.onresult = recognition.onerror = recognition.onend = null;
+        recognition.onresult = recognition.onerror = recognition.onend = recognition.onstart = null;
         recognition.abort();
         activeRecognition.current = null;
       }
@@ -43,7 +45,9 @@ export default function VoiceControls({ open, pending, answer, onTranscript }: {
   function dictate() {
     setNotice("");
     if (activeRecognition.current) {
-      activeRecognition.current.abort();
+      if (microphone === "starting") activeRecognition.current.abort();
+      else activeRecognition.current.stop();
+      setMicrophone("stopping");
       return;
     }
     const browser = window as Window & {
@@ -57,24 +61,37 @@ export default function VoiceControls({ open, pending, answer, onTranscript }: {
     }
     const recognition = new SpeechRecognition();
     recognition.lang = "en-GB";
+    recognition.onstart = () => setMicrophone("listening");
     recognition.onresult = (event) => {
       const transcript = event.results[0]?.[0]?.transcript.trim();
-      if (transcript) onTranscript(transcript);
+      if (transcript) {
+        onTranscript(transcript);
+        setNotice("Check the text before sending.");
+      }
     };
     recognition.onerror = ({ error }) => {
-      if (error !== "aborted") setNotice(error === "not-allowed"
-        ? "Allow microphone access or type your question."
-        : "I couldn’t hear that. Try again or type your question.");
+      if (error === "aborted") return;
+      if (error === "not-allowed" || error === "service-not-allowed") {
+        setNotice("Allow microphone access in your browser or type your question.");
+      } else if (error === "audio-capture") {
+        setNotice("No microphone was found. Check your device or type your question.");
+      } else if (error === "network") {
+        setNotice("The browser’s dictation service couldn’t connect. Try again or type your question.");
+      } else {
+        setNotice("I couldn’t hear any words. Try again or type your question.");
+      }
     };
     recognition.onend = () => {
       activeRecognition.current = null;
-      setListening(false);
+      setMicrophone("idle");
     };
     try {
-      recognition.start();
       activeRecognition.current = recognition;
-      setListening(true);
+      setMicrophone("starting");
+      recognition.start();
     } catch {
+      activeRecognition.current = null;
+      setMicrophone("idle");
       setNotice("The microphone couldn’t start. You can type your question.");
     }
   }
@@ -102,13 +119,15 @@ export default function VoiceControls({ open, pending, answer, onTranscript }: {
 
   return <div className="mt-2 text-xs text-slate-600">
     <div className="flex flex-wrap gap-x-4">
-      <button type="button" className="min-h-11 px-1 py-1 text-blue-800" disabled={pending || speaking} onClick={dictate}>
-        {listening ? "Stop listening" : "Use microphone"}
+      <button type="button" className="min-h-11 px-1 py-1 text-blue-800" disabled={pending || speaking || microphone === "stopping"} onClick={dictate}>
+        {microphone === "idle" ? "Use microphone" : microphone === "starting" ? "Cancel microphone" : "Stop listening"}
       </button>
-      {canSpeak && answer && <button type="button" className="min-h-11 px-1 py-1 text-blue-800" disabled={pending || listening} onClick={readAnswer}>
+      {canSpeak && answer && <button type="button" className="min-h-11 px-1 py-1 text-blue-800" disabled={pending || microphone !== "idle"} onClick={readAnswer}>
         {speaking ? "Stop reading" : "Read last answer"}
       </button>}
     </div>
-    <p role="status">{listening ? "Listening in English. Review the text before sending." : notice}</p>
+    <p role="status">{notice || ({
+      idle: "", starting: "Waiting for the microphone…", listening: "Listening in English…", stopping: "Finishing dictation…",
+    })[microphone]}</p>
   </div>;
 }

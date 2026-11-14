@@ -39,7 +39,10 @@ export default function Dashboard() {
     <>
       <header className="app-header">
         <div className="shell flex flex-wrap items-center justify-between gap-3 py-4">
-          <a href="#overview" className="text-xl font-bold tracking-tight text-blue-950 no-underline">FinCare</a>
+          <a href="#overview" className="inline-flex items-center gap-2 text-xl font-bold tracking-tight text-blue-950 no-underline">
+            <span className="fincare-logo" aria-hidden="true">F</span>
+            FinCare
+          </a>
           <nav aria-label="Workspace" className="header-links">
             <a href="#recommendations">Recommendations</a>
             <a href="#care-pathway">Care pathway</a>
@@ -47,7 +50,11 @@ export default function Dashboard() {
             <a href="#goal-three">Cancer outcomes</a>
             <a href="#evidence-coverage">Data coverage</a>
           </nav>
-          <button className="ai-header-button" type="button" aria-controls="fincare-ai" aria-expanded={aiOpen} onClick={() => setAIOpen(!aiOpen)}>✦ Ask FinCare AI</button>
+          <button className="ai-header-button" type="button" aria-controls="fincare-ai" aria-expanded={aiOpen} onClick={() => setAIOpen(!aiOpen)}>
+            <span className="ai-header-mark" aria-hidden="true">✦</span>
+            <span>Ask FinCare AI</span>
+            <span className="ai-header-arrow" aria-hidden="true">{aiOpen ? "×" : "↗"}</span>
+          </button>
         </div>
         <DashboardMotion />
       </header>
