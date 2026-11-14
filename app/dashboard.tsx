@@ -62,6 +62,7 @@ export default function Dashboard() {
           <h1 id="overview-title">Cancer care equality in Finland</h1>
           <p>Explore regional differences across the cancer care pathway.</p>
         </section>
+        <DecisionBrief />
         <section className="ai-start" aria-labelledby="investigation-start-heading">
           <div className="flex items-start gap-3">
             <span className="ai-mark" aria-hidden="true">✦</span>
@@ -82,7 +83,6 @@ export default function Dashboard() {
             ))}
           </div>
         </section>
-        <DecisionBrief />
         <Recommendations />
         <nav id="care-pathway" data-scroll-section aria-label="Cancer care pathway" className="pathway">
           <ol className="grid grid-cols-2 gap-px sm:grid-cols-4">

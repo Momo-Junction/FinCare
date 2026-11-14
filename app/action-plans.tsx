@@ -18,12 +18,34 @@ export function ActionCard({ plan }: { plan: ActionPlan }) {
 export function DecisionBrief() {
   const plan = localPlan("screening", "helsinki");
   const helsinki = rankedGaps("screening").find(({ id }) => id === "helsinki")!;
-  return <section className="panel space-y-3">
-    <p className="eyebrow">Two-minute decision brief · 2024</p>
-    <h2>Helsinki’s breast screening gap</h2>
-    <p>{helsinki.rate}% attended breast screening in Helsinki, compared with {comparisons.screening.national.rate}% nationally. At the national rate, about <strong>{helsinki.fewerAtNationalRate.toLocaleString("en-GB")} more people</strong> would have attended from the same group.</p>
-    <p className="text-sm">Use the recommendations below to check what kept people from attending and test a change against usual care.</p>
-    <a className="text-sm" href={plan.source.url}>{plan.source.name}</a>
+  const { year, national, limitation } = comparisons.screening;
+  return <section className="panel border-t-4 border-t-blue-600" aria-labelledby="decision-brief-title">
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <div>
+        <p className="eyebrow">Breast screening · {year}</p>
+        <h2 id="decision-brief-title">Helsinki’s breast screening gap</h2>
+        <dl className="my-4 grid grid-cols-2 gap-2">
+          <div className="rounded-xl bg-blue-50 p-3">
+            <dt className="text-xs font-medium">Helsinki</dt>
+            <dd className="text-2xl font-semibold tabular-nums text-blue-950">{helsinki.rate.toFixed(1)}%</dd>
+          </div>
+          <div className="rounded-xl bg-slate-50 p-3">
+            <dt className="text-xs font-medium">Finland overall</dt>
+            <dd className="text-2xl font-semibold tabular-nums">{national.rate.toFixed(1)}%</dd>
+          </div>
+        </dl>
+        <p className="text-sm">At Finland’s rate, about <strong>{helsinki.fewerAtNationalRate.toLocaleString("en-GB")} more people</strong> would have attended from the same group.</p>
+        <p className="my-2 text-xs text-slate-600">{limitation}</p>
+        <a className="text-xs" href={plan.source.url}>{plan.source.name}</a>
+      </div>
+      <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+        <h3>Check whether invitations were sent</h3>
+        <p className="mt-2 text-sm">The Helsinki screening lead and invitation provider can compare the invitation list with records of what was sent and returned.</p>
+        <h3 className="mt-3 text-sm">How to tell whether a change helps</h3>
+        <p className="mt-1 text-sm">If the team tests a change, compare attendance with the usual process over the same period.</p>
+        <a className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold" href="#recommendations">See the recommendations <span aria-hidden="true" className="ml-1">↓</span></a>
+      </div>
+    </div>
   </section>;
 }
 
