@@ -75,7 +75,13 @@ async function investigate(request: Request, onTool?: (tool: string) => void) {
         tools: investigationTools,
         tool_choice: { type: round === maxRounds ? "none" : "auto" },
       }, signal);
-      if (!response.ok) throw new Error("Provider request failed.");
+      if (!response.ok) {
+        console.error("Anthropic investigation request failed", {
+          status: response.status,
+          requestId: response.headers.get("request-id"),
+        });
+        throw new Error("Provider request failed.");
+      }
       const { stop_reason, content } = await response.json();
       if (!Array.isArray(content)) throw new Error("Invalid provider response.");
       if (stop_reason === "end_turn") {
