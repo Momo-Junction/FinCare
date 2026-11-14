@@ -11,7 +11,7 @@ function ChartSource({ stage }: { stage: MeasuredStage }) {
   const { source, year, denominator, limitation } = comparisons[stage];
   return <figcaption className="mt-2 space-y-1 text-xs text-slate-600">
     <p><a href={source.url}>{source.name}</a> · {year}</p>
-    <p>{stage === "screening" ? "Denominator: people selected for invitation." : `Denominator: ${denominator.toLowerCase()}.`} {limitation}</p>
+    <p>{stage === "screening" ? "The rate uses everyone selected for invitation." : `The rate uses all ${denominator.toLowerCase()}.`} {limitation}</p>
   </figcaption>;
 }
 
@@ -23,7 +23,7 @@ export function AttendanceChart({ area }: { area: Area }) {
   return <figure className="my-4 rounded-xl border border-blue-100 bg-blue-50/40 p-3">
     <h3 className="text-sm">{area.name} screening attendance</h3>
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <div className="relative size-28">
+      <div key={area.id} className="comparison-donut relative size-28">
         <PieChart width={112} height={112} accessibilityLayer={false}>
           <Pie data={slices} dataKey="value" innerRadius={36} outerRadius={51} startAngle={90} endAngle={-270} isAnimationActive={false}>
             {slices.map(({ name, color }) => <Cell key={name} fill={color} />)}
@@ -47,7 +47,7 @@ export function AttendanceChart({ area }: { area: Area }) {
 export function RegionalBars({ rows, stage, areaId, id }: { rows: readonly Area[]; stage: MeasuredStage; areaId?: string; id?: string }) {
   const indicator = comparisons[stage];
   return <figure id={id} className="mt-3 min-w-0">
-    <div className="text-xs" style={{ height: rows.length * 32 + 38 }}>
+    <div key={`${areaId ?? ""}:${rows.map(({ id }) => id).join(",")}`} className="comparison-bars text-xs" style={{ height: rows.length * 32 + 38 }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={[...rows]} layout="vertical" margin={{ right: 14 }}>
           <XAxis type="number" domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(value) => `${value}%`} />

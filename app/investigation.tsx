@@ -7,6 +7,7 @@ import { areas } from "../lib/screening";
 import { ScreeningChart } from "./comparison-charts";
 
 const toolLabels: Record<string, string> = {
+  check_waiting_time_evidence: "Checked waiting time guidance",
   show_screening_chart: "Prepared a screening chart",
   compare_lung_outcomes: "Compared lung cancer outcomes",
   get_region_data: "Checked local figures",
@@ -86,7 +87,10 @@ export default function Investigation({ areaId, setAreaId, stage, open, setOpen,
     setExchanges((previous) => [...previous, exchange]);
     const history = exchanges.filter(({ answer }) => answer).slice(-6).flatMap((item) => [
       { role: "user", content: item.question, areaId: item.areaId, stage: item.stage },
-      { role: "assistant", content: item.answer },
+      {
+        role: "assistant", content: item.answer,
+        focus: item.steps.flatMap(({ results }) => results.flatMap(({ localComparison }) => localComparison ? [localComparison] : [])).slice(0, 8),
+      },
     ]);
     try {
       const response = await fetch("/api/investigate", {
@@ -174,6 +178,16 @@ export default function Investigation({ areaId, setAreaId, stage, open, setOpen,
             </div>
             {exchange.answer && <Answer text={exchange.answer} fallback={exchange.fallback} animate={open && exchange === latest} conversation={conversation} />}
             {exchange.error && <p className="text-red-800">{exchange.error}</p>}
+            {!exchange.fallback && exchange.steps.filter(({ tool }) => tool === "design_intervention_pilot")
+              .flatMap(({ results }) => results).slice(-1).map(({ title, details }) => (
+                <details key={title} className="rounded-xl border border-blue-100 bg-white p-3 text-sm">
+                  <summary className="cursor-pointer font-semibold">Proposed test and how to measure it</summary>
+                  <h3 className="mt-2">{title}</h3>
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    {details.slice(2).map((detail) => <li key={detail}>{detail}</li>)}
+                  </ul>
+                </details>
+              ))}
             {exchange.steps.flatMap(({ results }) => results.filter(({ chart }) => chart).map(({ chart }) => chart!))
               .filter((chart, index, charts) => charts.findIndex((other) =>
                 other.type === chart.type && chart.areaIds.length === other.areaIds.length && chart.areaIds.every((id) => other.areaIds.includes(id)),
@@ -188,7 +202,7 @@ export default function Investigation({ areaId, setAreaId, stage, open, setOpen,
               <p className="font-semibold">Investigating {latest?.area ?? area}</p>
               <ul className="ai-timeline">
                 {completedTools.map((tool, index) => <li key={index} className="ai-tool-complete"><span aria-hidden="true">✓</span>{toolLabels[tool] ?? tool}</li>)}
-                <li><span aria-hidden="true">···</span>{completedTools.length ? "Preparing the answer" : "Checking available evidence"}</li>
+                <li><span aria-hidden="true">···</span>{completedTools.length ? "Reviewing what the checks found" : "Checking the available data"}</li>
               </ul>
               <div className="ai-progress" aria-hidden="true"><span /></div>
             </div>

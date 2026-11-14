@@ -2,8 +2,9 @@ import { evidenceFor, pilots, stagePilots } from "./brief.ts";
 import { comparisons, timingGaps, type MeasuredStage } from "./pathway.ts";
 import { areas, sources } from "./screening.ts";
 import { lungOutcomes, outcomeCoverage, outcomeMetrics, outcomePeriod, type OutcomeMetric } from "./lung-outcomes.ts";
-import { rankedGaps } from "./action-plans.ts";
+import { rankedGaps, localPlan, screeningReminderStudy, colonoscopyNavigationStudy } from "./action-plans.ts";
 import { isScreeningChartSpec, screeningChartTypes, type ScreeningChartSpec } from "./screening-chart.ts";
+import { pilotScenario } from "./goal-three.ts";
 
 export type EvidenceLink = { name: string; url: string };
 export type Step = {
@@ -25,6 +26,9 @@ function tool(name: string, description: string, properties: object, required: s
 }
 
 export const investigationTools = [
+  tool("check_waiting_time_evidence", "Check available evidence and THL recording guidance for referral or treatment waits. This tool does not return measured county waiting times.", {
+    stage: { type: "string", enum: ["referral", "treatment"] },
+  }, ["stage"]),
   tool("show_screening_chart", "Show a breast screening chart when requested or useful. Use attendance for one area's split and regional for comparisons of up to six areas. Supply only area IDs and the chart type.", {
     type: { type: "string", enum: screeningChartTypes },
     areaIds: { type: "array", items: areaInput, minItems: 1, maxItems: 6 },
@@ -54,6 +58,20 @@ export function isStage(value: unknown): value is (typeof stages)[number] {
 
 function isMeasured(value: unknown): value is MeasuredStage {
   return measured.some((stage) => stage === value);
+}
+
+const thlGuide = {
+  name: "THL · Follow-up of access to cancer care",
+  url: "https://www.julkari.fi/items/b5e1578d-c380-466a-b8a7-8506b6181612",
+};
+
+function waitingTimeEvidence(stage: keyof typeof timingGaps): Step {
+  const gap = timingGaps[stage];
+  return {
+    title: gap.title,
+    details: [gap.context, gap.guidance, `Who can act: ${gap.owner}.`, gap.collect, gap.evaluate],
+    sources: [thlGuide, sources.roadmap, sources.strategy],
+  };
 }
 
 function compare(stage: MeasuredStage, ids?: string[]): Step {
@@ -88,6 +106,10 @@ export function runInvestigationTool(name: string, input: unknown): Step[] {
     throw new Error("Unsupported tool or argument.");
   }
   const { areaId, areaIds: ids, stage, pilot } = args;
+  if (name === "check_waiting_time_evidence") {
+    if (stage !== "referral" && stage !== "treatment") throw new Error("Choose referral or treatment.");
+    return [waitingTimeEvidence(stage)];
+  }
   if (name === "show_screening_chart") {
     if (!isScreeningChartSpec(args)) throw new Error("Choose a chart type and valid reporting areas.");
     return [{ ...compare("screening", args.areaIds), chart: args }];
@@ -126,9 +148,9 @@ export function runInvestigationTool(name: string, input: unknown): Step[] {
   if (name === "analyze_care_pathway") {
     return [
       compare("screening", [areaId]),
-      { title: "Referral timing", details: [timingGaps.referral.context, timingGaps.referral.guidance, timingGaps.referral.collect, timingGaps.referral.evaluate], sources: [sources.roadmap] },
+      { ...waitingTimeEvidence("referral"), title: "Referral timing" },
       compare("diagnosis", [areaId]),
-      { title: "Treatment timing", details: [timingGaps.treatment.context, timingGaps.treatment.guidance, timingGaps.treatment.collect, timingGaps.treatment.evaluate], sources: [sources.roadmap, sources.strategy] },
+      { ...waitingTimeEvidence("treatment"), title: "Treatment timing" },
       ...runInvestigationTool("compare_lung_outcomes", { sex: "men", metric: "mortality", areaIds: [areaId] }),
     ];
   }
@@ -136,15 +158,27 @@ export function runInvestigationTool(name: string, input: unknown): Step[] {
   if (!isMeasured(stage) || !pilotId) throw new Error("Choose a pilot that matches the measured stage.");
   const proposal = pilots[pilotId];
   const evidence = evidenceFor(areaId, stage);
+  const area = evidence.regionalComparison.area!;
+  const national = evidence.regionalComparison.national;
+  const halfGap = Math.max(0, 50 * (national.attended / national.invited - area.attended / area.invited));
+  const scenario = pilotScenario(area.invited, area.attended, halfGap);
+  const plan = localPlan(stage, areaId);
   return [{
     title: proposal.title,
+    localComparison: { areaId, stage },
     details: [
       `Objective: improve ${stage === "screening" ? "equitable screening attendance" : "equitable diagnostic follow-up"}.`,
       `Target population: ${stage === "screening" ? "people invited to breast screening" : "people with a positive colorectal screening result"} in ${evidence.regionalComparison.area?.name}.`,
+      `Who can act: ${plan.owner}.`,
+      `What to check first: ${plan.first30}`,
       `Proposed action: ${proposal.action}`,
       `Evaluation: ${proposal.metric} Where counts allow, compare the change in participation or follow-up gaps between relevant groups, and report missing data.`,
+      halfGap > 0
+        ? `Planning example at the published group size: closing half the gap would move the rate from ${scenario.baseline.toFixed(1)}% to ${scenario.target.toFixed(1)}%, about ${scenario.additional} additional completions. This is a proposed target, not a prediction or a measured result.`
+        : "The area meets Finland’s rate. Set a local target only if the team finds a specific barrier.",
       `Limitations: Check the suspected barrier locally before starting. ${evidence.screeningDefinition.limitation}`,
     ],
-    sources: [evidence.regionalComparison.source, sources.strategy],
+    sources: [evidence.regionalComparison.source, sources.strategy,
+      ...(pilotId === "reminder" ? [screeningReminderStudy] : pilotId === "navigation" ? [colonoscopyNavigationStudy] : [])],
   }];
 }

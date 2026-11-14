@@ -76,7 +76,7 @@ test("agent uses prior context, executes sequential tool calls and preserves ver
   });
   const request = (history = [
     { role: "user", content: "How is the selected area doing?", areaId: "helsinki", stage: "screening" },
-    { role: "assistant", content: "Attendance is below the benchmark in Helsinki." },
+    { role: "assistant", content: "Attendance is below the benchmark in Helsinki.", focus: [{ areaId: "helsinki", stage: "screening" }] },
     { role: "user", content: "What could they pilot?" },
   ]) => new Request("http://localhost/api/investigate", {
     method: "POST",
@@ -100,8 +100,10 @@ test("agent uses prior context, executes sequential tool calls and preserves ver
   const payload = (index) => JSON.parse(mock.mock.calls[index].arguments[1].body);
   assert.match(payload(0).messages[0].content, /helsinki, screening/);
   assert.match(payload(0).system, /north-ostrobothnia/);
+  assert.match(payload(0).messages[1].content, /Previously discussed.*helsinki.*screening/);
   assert.match(payload(1).messages.at(-1).content[0].content, /74.3%/);
   assert.match(payload(2).messages.at(-1).content[0].content, /Target population/);
+  assert.match(payload(2).messages.at(-1).content[0].content, /proposed target, not a prediction/);
 
   replies = [finish("Which area would you like to compare?")];
   const clarification = await (await POST(request())).json();
@@ -143,10 +145,19 @@ test("agent uses prior context, executes sequential tool calls and preserves ver
   assert.match(timing.answer, /no comparable public county data/);
   assert.equal(timing.steps[0].results.length, 2);
   assert.ok(timing.steps[0].results.every(({ sources }) => sources.length > 0));
+  assert.ok(timing.steps[0].results.every(({ sources }) => sources.some(({ name }) => name.startsWith("THL"))));
+
+  replies = [regionCall, toolUse("toolu_wait", "check_waiting_time_evidence", { stage: "treatment" }),
+    finish("Helsinki screening attendance is below Finland’s rate. FinCare has no comparable public county data on treatment waits.")];
+  const mixed = await (await POST(request([
+    { role: "user", content: "Compare Helsinki screening attendance and treatment waits." },
+  ]))).json();
+  assert.deepEqual(mixed.steps.map(({ tool }) => tool), ["get_region_data", "check_waiting_time_evidence"]);
+  assert.match(mixed.answer, /no comparable public county data/);
 
   replies = [...Array(4).fill(regionCall), finish("Helsinki is below the benchmark.")];
   const capped = await (await POST(request())).json();
-  assert.equal(capped.steps.length, 4);
+  assert.equal(capped.steps.length, 1);
   assert.equal(payload(mock.mock.calls.length - 1).tool_choice.type, "none");
 
   replies = [regionCall, finish("Helsinki is below the benchmark.")];

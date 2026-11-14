@@ -232,7 +232,7 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
                   <caption className="sr-only">{indicator.title}, {indicator.year}</caption>
                   <thead><tr><th scope="col">Area</th><th scope="col">{indicator.numerator}</th><th scope="col">{indicator.denominator}</th><th scope="col">Area rate</th>{stage === "diagnosis" && <th scope="col">National rate</th>}</tr></thead>
                   <tbody>
-                    <tr className="font-semibold"><th scope="row">National benchmark</th><td>{counts.format(national.attended)}</td><td>{counts.format(national.invited)}</td><td>{national.rate.toFixed(1)}%</td>{stage === "diagnosis" && <td>{national.rate.toFixed(1)}%</td>}</tr>
+                    <tr className="font-semibold"><th scope="row">Finland overall</th><td>{counts.format(national.attended)}</td><td>{counts.format(national.invited)}</td><td>{national.rate.toFixed(1)}%</td>{stage === "diagnosis" && <td>{national.rate.toFixed(1)}%</td>}</tr>
                     {regional.map((item) => (
                       <tr key={item.id} className={item.id === areaId ? "bg-blue-50" : ""}>
                         <th scope="row">{item.name}</th><td>{counts.format(item.attended)}</td><td>{counts.format(item.invited)}</td><td>{item.rate.toFixed(1)}%</td>
@@ -258,14 +258,14 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
               <p className="my-3 text-sm text-slate-600">Ask what might be getting in people’s way and what a local team could try.</p>
               <button className="bg-blue-800 text-white hover:bg-blue-900" type="button" disabled={pending} onClick={generateBrief}>{pending ? "Preparing suggestion…" : "Explain this indicator and propose actions"}</button>
               <div aria-live="polite" aria-busy={pending}>
-                {pending && <div className="ai-loading mt-3" role="status"><span className="ai-pulse" aria-hidden="true" /> Preparing a pilot from regional evidence</div>}
+                {pending && <div className="ai-loading mt-3" role="status"><span className="ai-pulse" aria-hidden="true" /> Checking the local figures and what the team could try</div>}
                 {error && <p className="mt-3 text-sm text-red-800">{error}</p>}
                 {brief && (
                   <div className="mt-5 space-y-4 text-sm">
                     <p>{brief.interpretation}</p>
-                    <div><h3>Hypothesis to test</h3><p>{brief.hypothesis}</p></div>
-                    <div><h3>Why this pilot</h3><p>{brief.rationale}</p></div>
-                    <div><h3>Evidence limit</h3><p>{brief.limitation}</p></div>
+                    <div><h3>What might explain the gap</h3><p>{brief.hypothesis}</p></div>
+                    <div><h3>Why try this change</h3><p>{brief.rationale}</p></div>
+                    <div><h3>What the data can’t tell us</h3><p>{brief.limitation}</p></div>
                     <ul className="space-y-1">
                       {briefSources.map((source) => <li key={source.url}><a href={source.url}>{source.name}</a></li>)}
                     </ul>
