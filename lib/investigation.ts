@@ -3,9 +3,16 @@ import { comparisons, timingGaps, type MeasuredStage } from "./pathway.ts";
 import { areas, sources } from "./screening.ts";
 import { lungOutcomes, outcomeCoverage, outcomeMetrics, outcomePeriod, type OutcomeMetric } from "./lung-outcomes.ts";
 import { rankedGaps } from "./action-plans.ts";
+import { isScreeningChartSpec, screeningChartTypes, type ScreeningChartSpec } from "./screening-chart.ts";
 
 export type EvidenceLink = { name: string; url: string };
-export type Step = { title: string; details: string[]; sources: EvidenceLink[] };
+export type Step = {
+  title: string;
+  details: string[];
+  sources: EvidenceLink[];
+  localComparison?: { areaId: string; stage: MeasuredStage };
+  chart?: ScreeningChartSpec;
+};
 const areaIds = areas.map(({ id }) => id);
 const measured = ["screening", "diagnosis"] as const;
 const stages = ["screening", "referral", "diagnosis", "treatment"] as const;
@@ -18,6 +25,10 @@ function tool(name: string, description: string, properties: object, required: s
 }
 
 export const investigationTools = [
+  tool("show_screening_chart", "Show a breast screening chart when requested or useful. Use attendance for one area's split and regional for comparisons of up to six areas. Supply only area IDs and the chart type.", {
+    type: { type: "string", enum: screeningChartTypes },
+    areaIds: { type: "array", items: areaInput, minItems: 1, maxItems: 6 },
+  }, ["type", "areaIds"]),
   tool("compare_lung_outcomes", "Compare lung cancer incidence, five-year relative survival or mortality across all reporting areas or up to six selected areas. Use for Goal 3 and lung cancer outcome questions.", {
     sex: { type: "string", enum: ["women", "men"] },
     metric: { type: "string", enum: Object.keys(outcomeMetrics) },
@@ -54,6 +65,7 @@ function compare(stage: MeasuredStage, ids?: string[]): Step {
     !largest || area.fewerAtNationalRate > largest.fewerAtNationalRate ? area : largest, undefined);
   return {
     title: comparison.title,
+    localComparison: ids?.length === 1 ? { areaId: ids[0], stage } : undefined,
     details: [
       `${comparison.year} · ${comparison.coverage}`,
       comparison.definition,
@@ -76,6 +88,10 @@ export function runInvestigationTool(name: string, input: unknown): Step[] {
     throw new Error("Unsupported tool or argument.");
   }
   const { areaId, areaIds: ids, stage, pilot } = args;
+  if (name === "show_screening_chart") {
+    if (!isScreeningChartSpec(args)) throw new Error("Choose a chart type and valid reporting areas.");
+    return [{ ...compare("screening", args.areaIds), chart: args }];
+  }
   if (name === "compare_lung_outcomes") {
     const { sex, metric } = args;
     if ((sex !== "women" && sex !== "men") || typeof metric !== "string" || !Object.hasOwn(outcomeMetrics, metric)

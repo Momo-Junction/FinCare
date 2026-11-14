@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       : null;
     const direction = area.gap < 0 ? "below" : area.gap > 0 ? "above" : "equal";
     if (!isBrief(brief) || brief.direction !== direction || !stagePilots[stage].some((id) => id === brief.pilot)) {
-      return Response.json({ error: "FinCare AI returned a suggestion that could not be verified. Try again." }, { status: 502 });
+      return Response.json({ error: "FinCare AI couldn’t check its suggestion. Try again or use the plan below." }, { status: 502 });
     }
     return Response.json(brief);
   } catch (error) {

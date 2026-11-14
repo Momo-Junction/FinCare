@@ -43,6 +43,13 @@ test("pilot scenario uses cohort counts and caps completion at the cohort size",
 });
 
 test("tools return verified comparisons and stage-specific evidence", () => {
+  const spec = { type: "attendance", areaIds: ["helsinki"] };
+  const [chart] = runInvestigationTool("show_screening_chart", spec);
+  assert.deepEqual(chart.chart, spec);
+  assert.ok(chart.details.some((line) => /Helsinki: 74\.3% \(28,686 of 38,630\)/.test(line)));
+  assert.throws(() => runInvestigationTool("show_screening_chart", { ...spec, value: 99 }));
+  assert.throws(() => runInvestigationTool("show_screening_chart", { ...spec, areaIds: ["unknown"] }));
+  assert.throws(() => runInvestigationTool("show_screening_chart", { ...spec, areaIds: ["helsinki", "lapland"] }));
   const [comparison] = runInvestigationTool("compare_regions", {
     stage: "screening", areaIds: ["helsinki", "north-ostrobothnia"],
   });
@@ -96,11 +103,27 @@ test("agent uses prior context, executes sequential tool calls and preserves ver
   assert.match(payload(1).messages.at(-1).content[0].content, /74.3%/);
   assert.match(payload(2).messages.at(-1).content[0].content, /Target population/);
 
+  replies = [finish("Which area would you like to compare?")];
+  const clarification = await (await POST(request())).json();
+  assert.equal(clarification.answer, "Which area would you like to compare?");
+  assert.deepEqual(clarification.steps, []);
+
   replies = [regionCall, finish("Attendance improved by 8%.")];
   const fallback = await (await POST(request())).json();
   assert.match(fallback.answer, /Helsinki: 74\.3%/);
   assert.doesNotMatch(fallback.answer, /improved by 8%/);
+  assert.equal(fallback.fallback, "action-plan");
+  assert.match(fallback.answer, /Helsinki screening lead/);
+  assert.match(fallback.answer, /Match invitation records to dispatch logs/);
+  assert.match(fallback.answer, /How to measure it/);
   assert.equal(fallback.steps.length, 1);
+
+  replies = [regionCall, finish("Attendance improved by 8%.")];
+  const evidenceOnly = await (await POST(request([
+    { role: "user", content: "What was screening attendance in Helsinki?" },
+  ]))).json();
+  assert.equal(evidenceOnly.fallback, "evidence-only");
+  assert.doesNotMatch(evidenceOnly.answer, /Suggested next step/);
 
   replies = [{
     stop_reason: "end_turn",

@@ -4,8 +4,10 @@ import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type RefO
 import type { Step } from "../lib/investigation";
 import { comparisons, timingGaps, type Stage } from "../lib/pathway";
 import { areas } from "../lib/screening";
+import { ScreeningChart } from "./comparison-charts";
 
 const toolLabels: Record<string, string> = {
+  show_screening_chart: "Prepared a screening chart",
   compare_lung_outcomes: "Compared lung cancer outcomes",
   get_region_data: "Checked local figures",
   compare_regions: "Compared regions",
@@ -19,6 +21,7 @@ type Exchange = {
   areaId: string;
   stage: Stage;
   answer?: string;
+  fallback?: "action-plan" | "evidence-only";
   error?: string;
   steps: { tool: string; results: Step[]; error?: string }[];
 };
@@ -94,7 +97,7 @@ export default function Investigation({ areaId, setAreaId, stage, open, setOpen,
       if (!response.ok || !response.body) throw new Error("Investigation unavailable");
       const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
       let buffer = "";
-      let final: { ok: boolean; result: { answer?: string; error?: string; steps?: Exchange["steps"] } } | undefined;
+      let final: { ok: boolean; result: Pick<Exchange, "answer" | "error" | "fallback"> & { steps?: Exchange["steps"] } } | undefined;
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
@@ -112,13 +115,14 @@ export default function Investigation({ areaId, setAreaId, stage, open, setOpen,
       setExchanges((previous) => [...previous.slice(0, -1), {
         ...exchange,
         answer: ok ? result.answer : undefined,
+        fallback: result.fallback,
         error: ok ? undefined : result.error,
         steps: result.steps ?? [],
       }]);
       if (!ok) setQuestion((draft) => draft || content);
     } catch {
       setExchanges((previous) => [...previous.slice(0, -1), {
-        ...exchange, error: "FinCare AI could not connect. Try again or use the dashboard evidence.",
+        ...exchange, error: "FinCare AI couldn’t connect. Try again or check the figures on the dashboard.",
       }]);
       setQuestion((draft) => draft || content);
     } finally {
@@ -168,8 +172,12 @@ export default function Investigation({ areaId, setAreaId, stage, open, setOpen,
               <p className="text-xs font-semibold text-blue-100">You · {exchange.area} · <span className="capitalize">{exchange.stage}</span></p>
               <p className="mt-1 break-words">{exchange.question}</p>
             </div>
-            {exchange.answer && <Answer text={exchange.answer} animate={open && exchange === latest} conversation={conversation} />}
+            {exchange.answer && <Answer text={exchange.answer} fallback={exchange.fallback} animate={open && exchange === latest} conversation={conversation} />}
             {exchange.error && <p className="text-red-800">{exchange.error}</p>}
+            {exchange.steps.flatMap(({ results }) => results.filter(({ chart }) => chart).map(({ chart }) => chart!))
+              .filter((chart, index, charts) => charts.findIndex((other) =>
+                other.type === chart.type && chart.areaIds.length === other.areaIds.length && chart.areaIds.every((id) => other.areaIds.includes(id)),
+              ) === index).slice(0, 2).map((chart, index) => <ScreeningChart key={index} spec={chart} />)}
             {exchange.steps.length > 0 && <InvestigationSteps steps={exchange.steps} />}
           </article>
         ))}
@@ -212,8 +220,9 @@ export default function Investigation({ areaId, setAreaId, stage, open, setOpen,
   );
 }
 
-function Answer({ text, animate, conversation }: {
+function Answer({ text, fallback, animate, conversation }: {
   text: string;
+  fallback?: Exchange["fallback"];
   animate: boolean;
   conversation: RefObject<HTMLDivElement | null>;
 }) {
@@ -270,7 +279,10 @@ function Answer({ text, animate, conversation }: {
   const paragraphs = (typing ? text.slice(0, length) : text).split(/\n[ \t]*\n/);
   return (
     <div className="ai-answer-bubble">
-      <h3 className="ai-answer-label"><span aria-hidden="true">✦</span> FinCare AI</h3>
+      <h3 className="ai-answer-label"><span aria-hidden="true">✦</span>
+        {fallback === "evidence-only" ? "Evidence found" : fallback === "action-plan" ? "Evidence and suggested next steps" : "FinCare AI"}
+      </h3>
+      {fallback && <p className="mb-3 text-xs text-slate-600">FinCare couldn’t finish the full answer. Here’s what its data shows.</p>}
       <p className="sr-only">{text}</p>
       <div aria-hidden="true" className="space-y-3">
         {paragraphs.map((paragraph, index) => (
@@ -293,7 +305,7 @@ function InvestigationSteps({ steps }: { steps: Exchange["steps"] }) {
           {steps.map(({ tool, results, error }, index) => (
             <li key={index} className="rounded border border-slate-200 bg-white p-2">
               <details open={steps.length === 1}>
-                <summary className="cursor-pointer font-medium">{toolLabels[tool] ?? "Tool validation"}{error ? " · needs correction" : ""}</summary>
+                <summary className="cursor-pointer font-medium">{error ? "Check couldn’t be completed" : toolLabels[tool] ?? "Data check"}</summary>
                 {error && <p>{error}</p>}
                 {results.map(({ title, details }) => (
                   <div key={title} className="mt-2">

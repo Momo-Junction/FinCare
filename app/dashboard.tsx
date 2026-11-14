@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { AttendanceChart, RegionalBars } from "./comparison-charts";
 import { isBrief, pilots, type Brief } from "../lib/brief";
 import { comparisons, pathway, timingGaps, type MeasuredStage, type Stage } from "../lib/pathway";
 import { sources } from "../lib/screening";
@@ -104,7 +104,10 @@ export default function Dashboard() {
               setAIOpen(true);
             }} />
           ) : (
-            <Comparison key={stage} stage={stage} areaId={areaId} setAreaId={setAreaId} openAI={() => setAIOpen(true)} />
+            <Comparison key={stage} stage={stage} areaId={areaId} setAreaId={setAreaId} openAI={(question) => {
+              setGoalPrompt({ question });
+              setAIOpen(true);
+            }} />
           )}
         </div>
         <PriorityView />
@@ -145,13 +148,12 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
   stage: MeasuredStage;
   areaId: string;
   setAreaId: (id: string) => void;
-  openAI: () => void;
+  openAI: (question: string) => void;
 }) {
   const indicator = comparisons[stage];
   const { areas: regional, national } = indicator;
   const [showAll, setShowAll] = useState(stage === "diagnosis");
-  const chartData = regional.filter(({ id }, index) => showAll || id === areaId || index < 3 || index >= regional.length - 3)
-    .map(({ id, name, rate }) => ({ id, name, rate: Number(rate) }));
+  const chartData = regional.filter(({ id }, index) => showAll || id === areaId || index < 3 || index >= regional.length - 3);
   const [brief, setBrief] = useState<Brief | null>(null);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
@@ -194,7 +196,7 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
             <div className="comparison-header">
             <div>
             <p className="eyebrow">{indicator.status}</p>
-            <h2 id="comparison">{indicator.title}</h2>
+            <h2 id="comparison">{stage === "screening" ? "Screening Equity Explorer" : indicator.title}</h2>
             </div>
             <div>
             <label className="block text-xs font-semibold text-slate-600" htmlFor="area">Reporting area</label>
@@ -216,26 +218,13 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
               <div><dt>Difference</dt><dd className={area.gap < 0 ? "text-rose-700" : "text-blue-800"}>{gap}</dd></div>
             </dl>
             </div>
-            <p>{counts.format(area.attended)} of {counts.format(area.invited)} {indicator.denominator.toLowerCase()} in {area.name} {stage === "screening" ? "attended screening" : "were followed by a colonoscopy"}.</p>
+            {stage === "screening" ? <AttendanceChart area={area} /> :
+              <p>{counts.format(area.attended)} of {counts.format(area.invited)} {indicator.denominator.toLowerCase()} in {area.name} were followed by a colonoscopy.</p>}
             <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-4">
               <div><h3>Regional comparison</h3><p className="text-xs text-slate-600">{showAll ? "All reporting areas" : "Highest and lowest rates, plus your selection"}</p></div>
               <button type="button" aria-expanded={showAll} aria-controls="regional-chart" className="secondary-button" onClick={() => setShowAll(!showAll)}>{showAll ? "Show summary" : "Show all areas"}</button>
             </div>
-            <div id="regional-chart" className="mt-3 min-w-0 text-xs" style={{ height: chartData.length * 29 + 38 }} aria-hidden="true">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} layout="vertical" margin={{ right: 12 }} accessibilityLayer={false}>
-                  <XAxis type="number" domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(value) => `${value}%`} />
-                  <CartesianGrid horizontal={false} stroke="#e6edf5" />
-                  <YAxis type="category" dataKey="name" interval={0} width={116} tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#334155" }} />
-                  <ReferenceLine x={national.rate} stroke="#0f172a" strokeDasharray="4 3" />
-                  <Tooltip formatter={(value) => [`${Number(value).toFixed(1)}%`, "Rate"]} cursor={{ fill: "#f1f5fb" }} />
-                  <Bar dataKey="rate" barSize={14} radius={[0, 5, 5, 0]} isAnimationActive={false}>
-                    {chartData.map((item) => <Cell key={item.id} fill={item.id === areaId ? "#1555c0" : "#a8bfea"} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <p className="text-xs text-slate-600">The dashed line shows the rate for Finland overall.</p>
+            <RegionalBars id="regional-chart" rows={chartData} stage={stage} areaId={areaId} />
             <details className="my-4">
               <summary className="cursor-pointer font-semibold">View data table</summary>
               <div className="overflow-x-auto">
@@ -283,7 +272,11 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
                   </div>
                 )}
               </div>
-              <button type="button" className="secondary-button mt-3" onClick={openAI}>Open AI workspace →</button>
+              <button type="button" className="secondary-button mt-3" aria-controls="fincare-ai" onClick={() => openAI(
+                stage === "screening"
+                  ? "Show a chart comparing breast screening attendance in the selected area with Finland. What should the local team check first?"
+                  : "Explain how colorectal screening follow-up in the selected area compares with Finland. What should the local team check first?",
+              )}>Investigate with FinCare AI ↗</button>
             </section>
             <ActionCard plan={brief && pilot ? {
               ...localPlan(stage, areaId),
