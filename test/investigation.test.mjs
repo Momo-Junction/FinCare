@@ -85,8 +85,20 @@ test("agent uses prior context, executes sequential tool calls and preserves ver
 
   replies = [regionCall, finish("Attendance improved by 8%.")];
   const fallback = await (await POST(request())).json();
-  assert.match(fallback.answer, /could not finish/);
+  assert.match(fallback.answer, /Helsinki: 74\.3%/);
+  assert.doesNotMatch(fallback.answer, /improved by 8%/);
   assert.equal(fallback.steps.length, 1);
+
+  replies = [{
+    stop_reason: "end_turn",
+    content: [
+      { type: "web_search_tool_result", content: [{ type: "web_search_result", url: "https://thl.fi/en/", title: "THL" }] },
+      { type: "text", text: "THL published an update in 2026.", citations: [{ type: "web_search_result_location", url: "https://thl.fi/en/" }] },
+    ],
+  }];
+  const current = await (await POST(request())).json();
+  assert.match(current.answer, /2026/);
+  assert.equal(current.steps[0].results[0].sources[0].url, "https://thl.fi/en/");
 
   replies = [...Array(4).fill(regionCall), finish("Helsinki is below the benchmark.")];
   const capped = await (await POST(request())).json();

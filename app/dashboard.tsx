@@ -158,8 +158,8 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
             <div aria-live="polite">
             <dl key={areaId} className="metrics metric-enter">
               <div><dt>{area.name}</dt><dd>{area.rate.toFixed(1)}%</dd></div>
-              <div><dt>National benchmark</dt><dd>{national.rate.toFixed(1)}%</dd></div>
-              <div><dt>Gap to benchmark</dt><dd className={area.gap < 0 ? "text-rose-700" : "text-blue-800"}>{gap}</dd></div>
+              <div><dt>Finland overall</dt><dd>{national.rate.toFixed(1)}%</dd></div>
+              <div><dt>Difference</dt><dd className={area.gap < 0 ? "text-rose-700" : "text-blue-800"}>{gap}</dd></div>
             </dl>
             </div>
             <p>{counts.format(area.attended)} of {counts.format(area.invited)} {indicator.denominator.toLowerCase()} in {area.name} {stage === "screening" ? "attended screening" : "were followed by a colonoscopy"}.</p>
@@ -181,7 +181,7 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <p className="text-xs text-slate-600">Dashed line · national benchmark</p>
+            <p className="text-xs text-slate-600">The dashed line shows the rate for Finland overall.</p>
             <details className="my-4">
               <summary className="cursor-pointer font-semibold">View data table</summary>
               <div className="overflow-x-auto">
@@ -211,7 +211,7 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
             <section className="panel action-panel" aria-labelledby="brief">
               <p className="eyebrow">FinCare AI</p>
               <h2 id="brief">Investigate {area.name}</h2>
-              <p className="my-3 text-sm text-slate-600">Explore possible barriers and choose a pilot to test locally.</p>
+              <p className="my-3 text-sm text-slate-600">Ask what might be getting in people’s way and what a local team could try.</p>
               <button className="bg-blue-800 text-white hover:bg-blue-900" type="button" disabled={pending} onClick={generateBrief}>{pending ? "Preparing suggestion…" : "Suggest a pilot with FinCare AI"}</button>
               <div aria-live="polite" aria-busy={pending}>
                 {pending && <div className="ai-loading mt-3" role="status"><span className="ai-pulse" aria-hidden="true" /> Preparing a pilot from regional evidence</div>}
@@ -232,7 +232,7 @@ function Comparison({ stage, areaId, setAreaId, openAI }: {
               <button type="button" className="secondary-button mt-3" onClick={openAI}>Open AI workspace →</button>
             </section>
             <section className="panel">
-              <h2>Suggested pilot</h2>
+              <h2>What a local team could try</h2>
               <h3 className="mt-3">{pilot.title}</h3>
               <p className="mt-1">{area.gap >= 0 ? "Consider a targeted pilot if local checks identify a specific attendance barrier. " : ""}{pilot.action}</p>
               <h3 className="mt-3">Measure success</h3>

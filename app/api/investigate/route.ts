@@ -2,6 +2,7 @@ import { sendMessage } from "../../../lib/anthropic.ts";
 import { investigationTools, isAreaId, isStage, runInvestigationTool, type Step } from "../../../lib/investigation.ts";
 import { persona } from "../../../lib/persona.ts";
 import { areas } from "../../../lib/screening.ts";
+import { liveSourceSteps, liveTools } from "../../../lib/live-sources.ts";
 
 export const maxDuration = 60;
 const maxRounds = 4;
@@ -10,7 +11,8 @@ Use client tools to answer factual and planning questions. Select tools based on
 Use compare_regions for cross-area comparisons, analyze_care_pathway for evidence gaps, and design_intervention_pilot for pilot design or evaluation. For a tailored pilot, inspect regional or pathway evidence first.
 For mortality questions, avoid drawing conclusions about care quality from other cancer programmes. Keep proposals focused on what the team can audit locally.
 Use compare_lung_outcomes for lung cancer outcome questions. Use analyze_care_pathway when the question also asks about timing gaps or an audit.
-The interface displays exact figures and source links from successful tool results. In your answer use qualitative prose only. Do not repeat or invent any numbers, URLs, or source names. If no tool supplied a fact, say the evidence is unavailable.
+Use web_search for recent news, new releases or facts missing from the dashboard. Use web_fetch to read relevant public sources or a link the user supplies. Give the date and source for current claims, distinguish publication date from the period measured, and flag gaps or conflicting figures.
+For dashboard data, explain the result in words. The interface shows the exact figures. For current information found online, cite the source and include dates or figures when they matter. Use plain English and explain unfamiliar terms. If you cannot verify a claim, say what you could confirm.
 Use a short paragraph for simple questions. For complex requests, use short plain-text paragraphs with headings as needed: Key finding, Regional comparison, Potential barriers, Recommended action, Success metrics, Evidence and limitations. Label hypotheses explicitly. No Markdown syntax.`;
 
 type Turn = { role: "user" | "assistant"; content: string; areaId?: string; stage?: string };
@@ -72,7 +74,7 @@ async function investigate(request: Request, onTool?: (tool: string) => void) {
       const response = await sendMessage(apiKey, {
         system: `${system}\nCurrent dashboard context: ${context}`,
         messages,
-        tools: investigationTools,
+        tools: [...investigationTools, ...liveTools],
         tool_choice: { type: round === maxRounds ? "none" : "auto" },
       }, signal);
       if (!response.ok) {
@@ -84,6 +86,10 @@ async function investigate(request: Request, onTool?: (tool: string) => void) {
       }
       const { stop_reason, content } = await response.json();
       if (!Array.isArray(content)) throw new Error("Invalid provider response.");
+      for (const step of liveSourceSteps(content)) {
+        steps.push(step);
+        onTool?.(step.tool);
+      }
       if (stop_reason === "end_turn") {
         const answer = content.filter((block) => block?.type === "text" && typeof block.text === "string")
           .map(({ text }) => text).join("\n\n").trim()
@@ -94,10 +100,16 @@ async function investigate(request: Request, onTool?: (tool: string) => void) {
         const prose = answer.replace(/\bgoal\s+(?:3|three)\b/gi, "strategy objective")
           .replace(/\b2020\s*[-–—]\s*2024\b/g, (period) => hasOutcomes ? "reporting period" : period)
           .replace(/\bfive-year relative survival\b/gi, "relative survival");
-        if (!answer || answer.length > 3200 || unsupportedProse.test(prose)) {
+        const hasWebCitation = content.some((block) => block?.type === "text" && block.citations?.length)
+          && steps.some(({ tool }) => tool === "web_search" || tool === "web_fetch");
+        if (!answer || answer.length > 3200 || (!hasWebCitation && unsupportedProse.test(prose))) {
           return fallback(steps);
         }
         return Response.json({ answer, steps });
+      }
+      if (stop_reason === "pause_turn" && round < maxRounds) {
+        messages.push({ role: "assistant", content });
+        continue;
       }
       if (stop_reason !== "tool_use" || round === maxRounds) break;
       const calls = content.filter((block) => block?.type === "tool_use");
@@ -125,8 +137,21 @@ async function investigate(request: Request, onTool?: (tool: string) => void) {
 }
 
 function fallback(steps: { tool: string; results: Step[]; error?: string }[]) {
-  if (steps.some(({ results }) => results.length)) {
-    return Response.json({ answer: "FinCare AI could not finish the synthesis. The verified evidence and any completed pilot proposal are available in Investigation Steps.", steps });
+  const results = steps.flatMap(({ results }) => results);
+  const pilot = steps.findLast(({ tool, results }) => tool === "design_intervention_pilot" && results.length)?.results[0];
+  const comparisons = results.filter(({ details }) => details.length > 0 && !details[0].startsWith("Objective:"));
+  const findings = [...new Map(comparisons.map((result) => [result.title, result])).values()].slice(0, 4);
+  const sections = findings.map(({ title, details }) => {
+    const firstLines = details.slice(0, 5);
+    if (details.length > 5) firstLines.push(details.at(-1)!);
+    return `${title}\n${firstLines.join("\n")}`;
+  });
+  if (pilot) sections.push(`${pilot.title}\n${pilot.details.join("\n")}`);
+  if (sections.length) {
+    return Response.json({ answer: sections.join("\n\n").slice(0, 3200), steps });
   }
-  return Response.json({ error: "FinCare AI could not complete this investigation. Try again or use the dashboard evidence.", steps }, { status: 502 });
+  const error = results.length
+    ? "I found sources, but couldn’t verify an answer. You can open the links below."
+    : "I couldn’t check that right now. Please try again.";
+  return Response.json({ error, steps }, { status: 502 });
 }

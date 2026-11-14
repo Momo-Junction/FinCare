@@ -7,10 +7,12 @@ import { areas } from "../lib/screening";
 
 const toolLabels: Record<string, string> = {
   compare_lung_outcomes: "Compared lung cancer outcomes",
-  get_region_data: "Retrieved regional data",
+  get_region_data: "Checked local figures",
   compare_regions: "Compared regions",
-  analyze_care_pathway: "Reviewed care pathway",
-  design_intervention_pilot: "Designed an intervention pilot",
+  analyze_care_pathway: "Checked each step of care",
+  design_intervention_pilot: "Suggested what to try",
+  web_search: "Looked for recent sources",
+  web_fetch: "Read a public source",
 };
 
 type Exchange = {
@@ -42,15 +44,15 @@ export default function Investigation({ areaId, stage, open, setOpen, goalPrompt
   const selected = comparison?.areas.find(({ id }) => id === areaId);
   const questions = comparison ? [
     { label: "Find the gap", prompt: `Compare ${area} with the national benchmark for ${comparison.title.toLowerCase()}. What could explain the difference, and what should we check locally?` },
-    { label: "Locate it in the pathway", prompt: `Review the pathway for ${area}. Where does the measured difference occur, and which data should local teams collect next?` },
-    { label: "Recommend a pilot", prompt: `What should ${area} pilot for ${comparison.title.toLowerCase()}, and how should the team measure whether it improves equity?` },
+    { label: "Where does the gap show up?", prompt: `Review the pathway for ${area}. Where does the measured difference occur, and which data should local teams collect next?` },
+    { label: "What could a local team try?", prompt: `What should ${area} try for ${comparison.title.toLowerCase()}, and how could the team tell if it narrows the gap?` },
   ] : [
     { label: "Investigate this data gap", prompt: `What evidence is available for ${stage} in ${area}, and what should local teams collect?` },
     { label: "Plan an evaluation", prompt: `How could hospitals and county teams in ${area} evaluate equitable access at the ${stage} stage given current data limitations?` },
   ];
   const latest = exchanges.at(-1);
   const followUps = latest?.steps.some(({ tool, results }) => tool === "design_intervention_pilot" && results.length)
-    ? [{ label: "Evaluate this pilot", prompt: "How should we evaluate the pilot you just proposed and check whether it narrows inequalities?" }, ...questions.filter(({ label }) => label !== "Recommend a pilot")]
+    ? [{ label: "How would we know it worked?", prompt: "How could we check whether the change you suggested narrows the gap?" }, ...questions]
     : questions;
 
   useEffect(() => {
@@ -145,7 +147,7 @@ export default function Investigation({ areaId, stage, open, setOpen, goalPrompt
       <div ref={conversation} className="ai-body">
       {!exchanges.length && (
         <div className="ai-context">
-          <p className="mb-2 text-xs font-semibold text-blue-800">Current evidence</p>
+          <p className="mb-2 text-xs font-semibold text-blue-800">What we know</p>
           <h3>{selected ? comparison?.title : "Evidence gap"}</h3>
           <p>{selected ? `${area} recorded ${selected.rate.toFixed(1)}% in ${comparison?.year}, versus ${comparison?.national.rate.toFixed(1)}% nationally.`
             : timingGaps[stage as keyof typeof timingGaps]?.context}</p>
@@ -202,7 +204,7 @@ function InvestigationSteps({ steps }: { steps: Exchange["steps"] }) {
   return (
     <>
       <details className="rounded-lg bg-slate-50 p-3 text-sm" open>
-        <summary className="cursor-pointer font-semibold">Investigation Steps · {steps.length}</summary>
+        <summary className="cursor-pointer font-semibold">What I checked · {steps.length}</summary>
         <ol className="mt-2 space-y-2">
           {steps.map(({ tool, results, error }, index) => (
             <li key={index} className="rounded border border-slate-200 bg-white p-2">
