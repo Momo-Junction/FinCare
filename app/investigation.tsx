@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type RefObject } from "react";
 import type { Step } from "../lib/investigation";
 import { comparisons, timingGaps, type Stage } from "../lib/pathway";
 import { areas } from "../lib/screening";
@@ -66,7 +66,11 @@ export default function Investigation({ areaId, stage, open, setOpen, goalPrompt
 
   useEffect(() => {
     const body = conversation.current;
-    if (open && exchanges.length && body) body.scrollTop = body.scrollHeight;
+    if (!open || !exchanges.length || !body) return;
+    const answer = body.querySelector<HTMLElement>("article:last-of-type .ai-answer-bubble");
+    body.scrollTop = answer
+      ? body.scrollTop + answer.getBoundingClientRect().top - body.getBoundingClientRect().top - 16
+      : body.scrollHeight;
   }, [open, exchanges, pending, completedTools]);
 
   async function ask(input: string) {
@@ -145,21 +149,20 @@ export default function Investigation({ areaId, stage, open, setOpen, goalPrompt
       <div ref={conversation} className="ai-body">
       {!exchanges.length && (
         <div className="ai-context">
-          <p className="mb-2 text-xs font-semibold text-blue-800">What we know</p>
+          <p className="mb-2 text-xs font-semibold text-blue-800">Evidence for {area}</p>
           <h3>{selected ? comparison?.title : "Evidence gap"}</h3>
           <p>{selected ? `${area} recorded ${selected.rate.toFixed(1)}% in ${comparison?.year}, versus ${comparison?.national.rate.toFixed(1)}% nationally.`
             : timingGaps[stage as keyof typeof timingGaps]?.context}</p>
-          <p className="mt-2">Choose what FinCare AI should investigate.</p>
         </div>
       )}
       <div role="log" aria-label="FinCare AI conversation" className="space-y-4">
         {exchanges.map((exchange, index) => (
-          <article key={index} className="space-y-3 rounded-xl border border-blue-100 p-4">
+          <article key={index} className="space-y-3">
             <div className="ai-question-bubble">
               <p className="text-xs font-semibold text-blue-100">You · {exchange.area} · <span className="capitalize">{exchange.stage}</span></p>
               <p className="mt-1 break-words">{exchange.question}</p>
             </div>
-            {exchange.answer && <div className="ai-answer-bubble"><h3 className="mb-2 text-xs text-blue-900">FinCare AI</h3><p className="whitespace-pre-wrap break-words">{exchange.answer}</p></div>}
+            {exchange.answer && <Answer text={exchange.answer} animate={open && exchange === latest} conversation={conversation} />}
             {exchange.error && <p className="text-red-800">{exchange.error}</p>}
             {exchange.steps.length > 0 && <InvestigationSteps steps={exchange.steps} />}
           </article>
@@ -168,16 +171,18 @@ export default function Investigation({ areaId, stage, open, setOpen, goalPrompt
           <div role="status" className="ai-loading">
             <span className="ai-pulse" aria-hidden="true" />
             <div className="min-w-0 flex-1">
-              <p className="font-semibold">{completedTools.length ? "Investigation in progress" : "Starting investigation"}</p>
-              {completedTools.length > 0 && <ul className="mt-2 space-y-1 text-xs">
-                {completedTools.map((tool, index) => <li key={index} className="ai-tool-complete">✓ {toolLabels[tool] ?? tool}</li>)}
-              </ul>}
+              <p className="font-semibold">Investigating {latest?.area ?? area}</p>
+              <ul className="ai-timeline">
+                {completedTools.map((tool, index) => <li key={index} className="ai-tool-complete"><span aria-hidden="true">✓</span>{toolLabels[tool] ?? tool}</li>)}
+                <li><span aria-hidden="true">···</span>{completedTools.length ? "Preparing the answer" : "Checking available evidence"}</li>
+              </ul>
               <div className="ai-progress" aria-hidden="true"><span /></div>
             </div>
           </div>
         )}
       </div>
-      {!pending && <div className="mt-3 grid gap-2" aria-label="Suggested next questions">
+      {!pending && <div className="mt-4 grid gap-2" role="group" aria-labelledby="ai-suggestions-heading">
+        <p id="ai-suggestions-heading" className="text-xs font-semibold text-slate-600">{latest?.answer ? "Explore further" : "Start an investigation"}</p>
         {followUps.map(({ label, prompt }) => (
           <button key={label} type="button" onClick={() => void ask(prompt)} className="ai-suggestion">{label} <span aria-hidden="true">↗</span></button>
         ))}
@@ -185,10 +190,14 @@ export default function Investigation({ areaId, stage, open, setOpen, goalPrompt
       </div>
       <form onSubmit={submit} className="ai-composer">
         <label htmlFor="ai-question" className="sr-only">Ask FinCare AI a question</label>
-        <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+        <div className="flex items-center gap-2">
           <input id="ai-question" value={question} maxLength={800} onChange={(event) => setQuestion(event.target.value)}
-            className="min-w-0 flex-1 rounded-lg border border-slate-300 p-2.5" placeholder="How could our region improve follow-up?" />
-          <button type="submit" disabled={pending || !question.trim()} className="bg-blue-800 text-white hover:bg-blue-900">Send</button>
+            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-slate-50 p-3 text-base focus:border-blue-600 focus:outline-blue-600" placeholder="Ask about this area…" />
+          <button type="submit" aria-label="Send question" disabled={pending || !question.trim()} className="ai-send">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 19V5m-6 6 6-6 6 6" />
+            </svg>
+          </button>
         </div>
         <p className="mt-2 text-xs text-slate-600">For service planning. Leave out patient details.</p>
       </form>
@@ -197,11 +206,64 @@ export default function Investigation({ areaId, stage, open, setOpen, goalPrompt
   );
 }
 
+function Answer({ text, animate, conversation }: {
+  text: string;
+  animate: boolean;
+  conversation: RefObject<HTMLDivElement | null>;
+}) {
+  const [length, setLength] = useState(() =>
+    animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : text.length,
+  );
+  const started = useRef<number | null>(null);
+  const follow = useRef(false);
+  const finished = useRef(false);
+
+  useLayoutEffect(() => {
+    if (follow.current && conversation.current) {
+      conversation.current.scrollTop = conversation.current.scrollHeight;
+    }
+  }, [conversation, length]);
+
+  useEffect(() => {
+    if (!animate || finished.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const duration = Math.min(1500, Math.max(260, text.length * 3));
+    let frame: number;
+
+    function tick(now: number) {
+      started.current ??= now;
+      const body = conversation.current;
+      follow.current = Boolean(body && body.scrollHeight - body.scrollTop - body.clientHeight < 40);
+      const progress = Math.min(1, (now - started.current) / duration);
+      let end = Math.floor(progress * text.length);
+      // Keep UTF-16 surrogate pairs intact while slicing the response.
+      const next = text.charCodeAt(end);
+      if (next >= 0xdc00 && next <= 0xdfff) end += 1;
+      setLength(end);
+      finished.current = progress === 1;
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    }
+
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [animate, conversation, text]);
+
+  const typing = animate && length < text.length;
+  return (
+    <div className="ai-answer-bubble">
+      <h3 className="ai-answer-label"><span aria-hidden="true">✦</span> FinCare AI</h3>
+      <p className="sr-only">{text}</p>
+      <p aria-hidden="true" className="whitespace-pre-wrap break-words">
+        {typing ? text.slice(0, length) : text}{typing && <span className="ai-caret" />}
+      </p>
+    </div>
+  );
+}
+
 function InvestigationSteps({ steps }: { steps: Exchange["steps"] }) {
   const links = new Map(steps.flatMap(({ results }) => results.flatMap(({ sources }) => sources.map((source) => [source.url, source] as const))));
   return (
     <>
-      <details className="rounded-lg bg-slate-50 p-3 text-sm" open>
+      <details className="rounded-xl border border-blue-100 bg-white p-3 text-sm">
         <summary className="cursor-pointer font-semibold">What I checked · {steps.length}</summary>
         <ol className="mt-2 space-y-2">
           {steps.map(({ tool, results, error }, index) => (

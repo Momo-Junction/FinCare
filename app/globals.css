@@ -57,28 +57,42 @@ th, td { @apply border-b border-slate-200 px-2 py-2; }
 }
 .ai-launcher span { @apply mr-1 text-blue-200; }
 .ai-window {
-  @apply fixed right-3 bottom-3 left-3 z-50 flex max-h-[min(44rem,calc(100dvh-1.5rem))] flex-col overflow-hidden rounded-2xl border border-blue-200 bg-white shadow-2xl outline-none sm:right-7 sm:bottom-7 sm:left-auto sm:w-[31rem];
+  @apply fixed inset-x-0 bottom-0 z-50 flex h-[min(48rem,calc(100dvh-1rem))] flex-col overflow-hidden rounded-t-3xl border border-blue-200 bg-white outline-none sm:right-7 sm:bottom-7 sm:left-auto sm:h-[min(45rem,calc(100dvh-3.5rem))] sm:w-[33rem] sm:rounded-3xl;
+  box-shadow: 0 24px 80px -20px #142d6666;
   animation: ai-enter 220ms ease-out both;
 }
 .ai-window[hidden], .ai-launcher[hidden] { display: none; }
-.ai-header { @apply flex shrink-0 items-center gap-3 bg-gradient-to-br from-blue-950 to-blue-700 p-4 text-white; }
-.ai-mark { @apply grid size-10 shrink-0 place-items-center rounded-xl bg-white/15 text-xl text-blue-100; }
-.ai-close { @apply shrink-0 px-3 py-1 text-2xl leading-none hover:bg-white/15 focus-visible:outline-white; }
-.ai-body { @apply min-h-0 flex-1 overscroll-contain overflow-y-auto p-4; }
-.ai-context { @apply rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-950; }
+.ai-header {
+  @apply flex shrink-0 items-center gap-3 px-4 py-3 text-white sm:px-5;
+  background: radial-gradient(ellipse at 18% 0%, #3859bd 0%, transparent 58%), linear-gradient(115deg, #142450, #1d40a3);
+}
+.ai-mark { @apply grid size-11 shrink-0 place-items-center rounded-2xl border border-white/25 bg-white/15 text-2xl text-blue-100; }
+.ai-close { @apply grid size-11 shrink-0 place-items-center rounded-xl p-0 text-2xl leading-none hover:bg-white/15 focus-visible:outline-white; }
+.ai-body { @apply min-h-0 flex-1 overscroll-contain overflow-y-auto bg-slate-50/75 p-4 sm:px-5; }
+.ai-context { @apply rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-4 text-sm leading-relaxed text-blue-950; }
 .ai-context h3 { @apply mb-1; }
-.ai-suggestion { @apply border border-blue-200 bg-white px-2.5 py-1.5 text-left text-xs text-blue-900 hover:bg-blue-50; }
+.ai-suggestion { @apply min-h-11 rounded-xl border border-blue-100 bg-white px-3 py-2 text-left text-sm text-blue-900 transition-colors hover:border-blue-300 hover:bg-blue-50; }
 .ai-suggestion span { @apply float-right; }
-.ai-question-bubble { @apply ml-auto w-fit max-w-[90%] rounded-2xl rounded-br-sm bg-blue-700 p-3 text-sm text-white; }
-.ai-answer-bubble { @apply mr-5 rounded-2xl rounded-bl-sm bg-slate-100 p-3 text-sm leading-relaxed; }
+.ai-question-bubble { @apply ml-auto w-fit max-w-[92%] rounded-2xl rounded-br-sm bg-blue-700 px-4 py-3 text-sm text-white; }
+.ai-answer-bubble { @apply min-w-0 rounded-2xl rounded-tl-sm border border-blue-100 bg-white p-4 text-[0.9375rem] leading-relaxed shadow-sm; }
+.ai-answer-label { @apply mb-3 flex items-center gap-2 text-xs text-blue-950; }
+.ai-answer-label span { @apply grid size-6 place-items-center rounded-lg bg-blue-50 text-blue-700; }
+.ai-caret { @apply ml-0.5 inline-block h-[1em] w-0.5 rounded-full bg-blue-600 align-middle; }
 .ai-progress { @apply relative mt-2 h-1 overflow-hidden rounded-full bg-blue-100; }
 .ai-progress span { @apply absolute h-full w-1/2 rounded-full bg-blue-600; animation: ai-sweep 1.3s ease-in-out infinite; }
 @keyframes ai-sweep {
   from { transform: translateX(-100%); }
   to { transform: translateX(200%); }
 }
-.ai-composer { @apply shrink-0 border-t border-slate-200 bg-white p-3; }
+.ai-composer {
+  @apply shrink-0 border-t border-slate-200 bg-white px-4 pt-3 sm:px-5;
+  padding-bottom: max(.75rem, env(safe-area-inset-bottom));
+}
+.ai-send { @apply grid size-12 shrink-0 place-items-center rounded-xl bg-blue-700 p-0 text-white hover:bg-blue-800; }
 .ai-loading { @apply flex items-center gap-3 rounded-xl bg-blue-50 px-3 py-3 text-sm text-blue-900; }
+.ai-timeline { @apply mt-2 space-y-2 border-l border-blue-200 pl-3 text-xs; }
+.ai-timeline li { @apply flex items-center gap-2; }
+.ai-timeline li span { @apply grid size-5 shrink-0 place-items-center rounded-md bg-white font-semibold text-blue-700; }
 .ai-pulse { @apply relative grid size-4 shrink-0 place-items-center rounded-full bg-blue-600; }
 .ai-pulse::after {
   content: "";
