@@ -113,6 +113,9 @@ test("agent uses prior context, executes sequential tool calls and preserves ver
   assert.match(payload(0).messages[1].content, /Previously discussed.*helsinki.*screening/);
   assert.match(payload(1).messages.at(-1).content[0].content, /74.3%/);
   assert.match(payload(2).messages.at(-1).content[0].content, /Target population/);
+  replies = [regionCall, finish("[[LOCAL_RESULT]]\n\nCheck whether invitations arrived.")];
+  const withFigures = await (await POST(request())).json();
+  assert.match(withFigures.answer, /Helsinki: 74\.3%\. Finland overall: 81\.6% \(2024\)/);
   assert.match(payload(2).messages.at(-1).content[0].content, /proposed target, not a prediction/);
 
   replies = [finish("Which area would you like to compare?")];

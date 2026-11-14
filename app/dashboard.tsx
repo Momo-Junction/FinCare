@@ -50,11 +50,10 @@ export default function Dashboard() {
             <a href="#goal-three">Cancer outcomes</a>
             <a href="#evidence-coverage">Data coverage</a>
           </nav>
-          <button className="ai-header-button" type="button" aria-controls="fincare-ai" aria-expanded={aiOpen} onClick={() => setAIOpen(!aiOpen)}>
-            <span className="ai-header-mark" aria-hidden="true">✦</span>
-            <span>Ask FinCare AI</span>
-            <span className="ai-header-arrow" aria-hidden="true">{aiOpen ? "×" : "↗"}</span>
-          </button>
+          <a className="ai-header-link" href="#fincare-ai" aria-controls="fincare-ai" aria-expanded={aiOpen} onClick={(event) => {
+            event.preventDefault();
+            setAIOpen(true);
+          }}>Ask FinCare AI</a>
         </div>
         <DashboardMotion />
       </header>

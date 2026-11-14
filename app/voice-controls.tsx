@@ -119,7 +119,11 @@ export default function VoiceControls({ open, pending, answer, onTranscript }: {
 
   return <div className="mt-2 text-xs text-slate-600">
     <div className="flex flex-wrap gap-x-4">
-      <button type="button" className="min-h-11 px-1 py-1 text-blue-800" disabled={pending || speaking || microphone === "stopping"} onClick={dictate}>
+      <button type="button" className="inline-flex min-h-11 items-center gap-2 px-1 py-1 text-blue-800" disabled={pending || speaking || microphone === "stopping"} onClick={dictate}>
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="9" y="2" width="6" height="13" rx="3" />
+          <path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-3 0h6" />
+        </svg>
         {microphone === "idle" ? "Use microphone" : microphone === "starting" ? "Cancel microphone" : "Stop listening"}
       </button>
       {canSpeak && answer && <button type="button" className="min-h-11 px-1 py-1 text-blue-800" disabled={pending || microphone !== "idle"} onClick={readAnswer}>
